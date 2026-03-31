@@ -1,0 +1,11 @@
+{
+    "activeStyle": "Canny", 
+    "Threshold": {
+        "threshold": 127.0,
+        "maxValue": 255.0
+    },
+    "Canny": {
+        "threshold1": 50.0,
+        "threshold2": 150.0
+    }
+}
