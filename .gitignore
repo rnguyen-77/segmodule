@@ -1,0 +1,6 @@
+build/
+basicseg
+*.o
+*.out
+opencv-4.x/
+opencv-install/

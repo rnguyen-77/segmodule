@@ -1,0 +1,3 @@
+/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/rebuild_cache.dir
+/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/edit_cache.dir
+/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/basicseg.dir

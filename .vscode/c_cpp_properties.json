@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/mnt/netapp/SECURITY/users/rnguyen/**",
+                "/mnt/netapp/SECURITY/users/rnguyen/segModule/opencv-install/include",
+                "/mnt/netapp/SECURITY/users/rnguyen/segModule/opencv-install/include/opencv4"
+            ],
+            "defines": [],
+            "compilerPath": "/bin/g++",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
