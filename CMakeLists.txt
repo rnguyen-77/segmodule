@@ -8,10 +8,11 @@ project(BasicImageSegmenter)
 set(OpenCV_DIR "/mnt/netapp/SECURITY/users/rnguyen/segModule/opencv-install/lib/cmake/opencv4")
 
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS})
+find_package(yaml-cpp REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
 
 add_executable(basicseg basicseg.cpp segmenter.cpp)
-target_link_libraries(basicseg ${OpenCV_LIBS})
+target_link_libraries(basicseg PRIVATE ${OpenCV_LIBS} yaml-cpp)
 
 message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
 message(STATUS "Include Directory: ${OpenCV_INCLUDE_DIRS}")

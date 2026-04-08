@@ -1,29 +1,27 @@
 #pragma once
 
+#include <fstream>
+#include <map>
+#include <memory>
+#include <stdexcept>
+#include <vector>
+
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <yaml-cpp/yaml.h>
 
-#include <iostream>
-#include <memory>
-#include <map>
-#include <fstream>
-#include <nlohmann/json.hpp>
-
-using namespace cv;
-using namespace std;
-using json = nlohmann::json;
 
 //class to load and store configuration parameters for segmenters
 class ConfigLoader {
 public:
-    static void loadConfig(const string& filename);
-    static string getActiveStyle();
-    static double getParam(const string& styleName, const string& paramName);
+    static void loadConfig(const std::string& filename);
+    static std::string getActiveStyle();
+    static double getParam(const std::string& styleName, const std::string& paramName);
 
 private:
-    static map<string, map<string, double>> config_; //nested map to store parameters for each segmentation style
-    static json jsonRoot; //json object to store entire configuration from JSON file
+    static std::map<std::string, std::map<std::string, double>> config_; //nested map to store parameters for each segmentation style
+    static YAML::Node root_;
 };
 
 //enum class to define different segmentation styles
@@ -32,14 +30,28 @@ enum class SegmentationStyle {
     Canny
 };
 
+//
+struct ObjectFeatures {
+    int labelID;
+    int area;
+    cv::Rect bbox;
+    cv::Point2d centroid;
+};
+
+//
+struct SegmentationResult {
+    cv::Mat labels;
+    std::vector<ObjectFeatures> objects;
+};
+
 //base class for image segmenters
 class SegmenterBase {
 public:
     virtual ~SegmenterBase() = default; //virtual destructor to ensure proper cleanup of derived class objects through base class pointers
-    virtual Mat segment(const Mat& input) const = 0; //pure virtual function to be implemented by derived classes
-
+    virtual cv::Mat segment(const cv::Mat& input) const = 0; //pure virtual function to be implemented by derived classes
+    SegmentationResult segmentWithFeatures(const cv::Mat& input) const;
 protected:
-    Mat toGray(const Mat& input) const;
+    cv::Mat toGray(const cv::Mat& input) const;
 };
 
 //derived class for thresholding segmentation
@@ -48,7 +60,7 @@ public:
     ThresholdSegmenter(double threshold, double maxValue)
         : threshold_(threshold), maxValue_(maxValue) {}
 
-    Mat segment(const Mat& input) const override;
+    cv::Mat segment(const cv::Mat& input) const override;
 
 private:
     double threshold_;
@@ -61,7 +73,7 @@ public:
     CannySegmenter(double lowThreshold, double highThreshold)
         : lowThreshold_(lowThreshold), highThreshold_(highThreshold) {}
 
-    Mat segment(const Mat& input) const override;
+    cv::Mat segment(const cv::Mat& input) const override;
 
 private:
     double lowThreshold_;
@@ -71,8 +83,8 @@ private:
 //factory class: creates segmenter objects based on style enum
 class SegmenterFactory {
 public:
-    static unique_ptr<SegmenterBase> create(SegmentationStyle style);
+    static std::unique_ptr<SegmenterBase> create(SegmentationStyle style);
 };
 
-//function to parse string representation of segmentation style from JSON file
-SegmentationStyle parseStyle(const string& style);
+//function to parse string representation of segmentation style from YAML file
+SegmentationStyle parseStyle(const std::string& style);

@@ -1,93 +1,153 @@
 #include "segmenter.hpp"
+#include <stdexcept>
 
-// Static member definitions — must live in exactly one .cpp file
-map<string, map<string, double>> ConfigLoader::config_;
-json ConfigLoader::jsonRoot;
+// 
+std::map<std::string, std::map<std::string, double>> ConfigLoader::config_;
+YAML::Node ConfigLoader::root_;
 
-void ConfigLoader::loadConfig(const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        throw runtime_error("Could not open config file: " + filename);
+//
+void ConfigLoader::loadConfig(const std::string& filename) {
+    root_ = YAML::LoadFile(filename);
+    config_.clear();
+
+    if (!root_["activeStyle"] || !root_["activeStyle"].IsScalar()){
+        throw std::runtime_error("activeStyle missing or not a string");
     }
-
-    file >> jsonRoot;
-    for (auto& [style, params] : jsonRoot.items()) { //iterates through parameters for segmentaion styles defined in JSON file
-        if (!params.is_object()) {
-            continue; //skips non-object entries like activeStyle
+    for (const auto& kv:root_){
+        const std::string style = kv.first.as<std::string>();
+        if (style == "activeStyle") {
+            continue;
         }
-        for (auto& [paramName, paramValue] : params.items()) { //iterates through parameters values for each parameter
-            if (!paramValue.is_number()) { //ensures all parameters are numeric for simplicity
-                throw runtime_error("Expected number for " + style + "." + paramName);
+        const YAML::Node params = kv.second;
+        if (!params.IsMap()){
+            throw std::runtime_error("Style block must be a map: " + style);
+        }
+        for (const auto& p:params){
+            const std::string paramName = p.first.as<std::string>();
+            double paramValue = 0.0;
+            try {
+                paramValue = p.second.as<double>();
+            } catch (const YAML::BadConversion&) {
+                throw std::runtime_error("Expected number for " + style + ": " + paramName);
             }
+        
             config_[style][paramName] = paramValue;
         }
     }
-}
-
-string ConfigLoader::getActiveStyle() {
-    if (!jsonRoot.contains("activeStyle")) {
-        throw runtime_error("Active segmentation style not found in config.");
+    const std::string active = getActiveStyle();
+    if (!config_.contains(active)){
+        throw std::runtime_error("activeStyle does not match any style block: " + active);
     }
-    return jsonRoot["activeStyle"].get<string>();
 }
 
-double ConfigLoader::getParam(const string& styleName, const string& paramName) {
+//
+std::string ConfigLoader::getActiveStyle() {
+    if (!root_["activeStyle"] || !root_ || !root_["activeStyle"].IsScalar()){
+        throw std::runtime_error("activeStyle missing or not a string");
+    }
+    return root_["activeStyle"].as<std::string>();
+}
+
+//returns parameter value for given segmentation style and parameter name
+double ConfigLoader::getParam(const std::string& styleName, const std::string& paramName) {
     if (!config_.contains(styleName)) {
-        throw runtime_error("Segmentation style not found in config: " + styleName);
+        throw std::runtime_error("Segmentation style not found in config: " + styleName);
     }
     if (!config_[styleName].contains(paramName)) {
-        throw runtime_error("Parameter not found in config for style " + styleName + ": " + paramName);
+        throw std::runtime_error("Parameter not found in config for style " + styleName + ": " + paramName);
     }
     return config_[styleName][paramName];
 }
 
-Mat SegmenterBase::toGray(const Mat& input) const {
+//base class implementation for common functionality like converting input image to grayscale
+cv::Mat SegmenterBase::toGray(const cv::Mat& input) const {
     if (input.empty()) {
-        throw invalid_argument("Input image is empty.");
+        throw std::invalid_argument("Input image is empty.");
     }
     if (input.channels() == 1) {
         return input;
     }
-    Mat gray;
-    cvtColor(input, gray, COLOR_BGR2GRAY);
+    cv::Mat gray;
+    cv::cvtColor(input, gray, cv::COLOR_BGR2GRAY);
     return gray;
 }
 
-Mat ThresholdSegmenter::segment(const Mat& input) const {
-    Mat gray = toGray(input);
-    Mat mask;
-    threshold(gray, mask, threshold_, maxValue_, THRESH_BINARY);
+//
+SegmentationResult SegmenterBase::segmentWithFeatures(const cv::Mat& input) const {
+    if (input.empty()) {
+        throw std::invalid_argument("Input image is empty.");
+    }
+
+    cv::Mat labelImage;
+    cv::Mat stats;
+    cv::Mat centroids;
+    cv::connectedComponentsWithStats(input, labelImage, stats, centroids);
+
+    SegmentationResult result;
+    result.labels = labelImage;
+    result.objects.clear();
+
+    const int numLabels = stats.rows; // label 0 is background
+    for (int label = 1; label < numLabels; ++label) {
+        ObjectFeatures obj{};
+        obj.labelID = label;
+
+        obj.area = stats.at<int>(label, cv::CC_STAT_AREA);
+
+        const int left   = stats.at<int>(label, cv::CC_STAT_LEFT);
+        const int top    = stats.at<int>(label, cv::CC_STAT_TOP);
+        const int width  = stats.at<int>(label, cv::CC_STAT_WIDTH);
+        const int height = stats.at<int>(label, cv::CC_STAT_HEIGHT);
+        obj.bbox = cv::Rect(left, top, width, height);
+
+        obj.centroid = cv::Point2d(
+            centroids.at<double>(label, 0), // x
+            centroids.at<double>(label, 1)  // y
+        );
+        result.objects.push_back(obj);
+    }
+    return result;
+}
+
+//implementation of thresholding segmentation using OpenCV's threshold function
+cv::Mat ThresholdSegmenter::segment(const cv::Mat& input) const {
+    cv::Mat gray = toGray(input);
+    cv::Mat mask;
+    cv::threshold(gray, mask, threshold_, maxValue_, cv::THRESH_BINARY);
     return mask;
 }
 
-Mat CannySegmenter::segment(const Mat& input) const {
-    Mat gray = toGray(input);
-    Mat blurred;
-    GaussianBlur(gray, blurred, Size(5, 5), 1.0);
-    Mat edges;
-    Canny(blurred, edges, lowThreshold_, highThreshold_);
+//implementation of Canny edge detection segmentation using OpenCV's Canny function
+cv::Mat CannySegmenter::segment(const cv::Mat& input) const {
+    cv::Mat gray = toGray(input);
+    cv::Mat blurred;
+    cv::GaussianBlur(gray, blurred, cv::Size(5, 5), 1.0);
+    cv::Mat edges;
+    cv::Canny(blurred, edges, lowThreshold_, highThreshold_);
     return edges;
 }
 
-SegmentationStyle parseStyle(const string& style) {
+//helper function to parse active segmentation style string from config and return corresponding enum value
+SegmentationStyle parseStyle(const std::string& style) {
     if (style == "Threshold") return SegmentationStyle::Threshold;
     if (style == "Canny") return SegmentationStyle::Canny;
-    throw invalid_argument("Unknown activeStyle in config: " + style);
+    throw std::invalid_argument("Unknown activeStyle in config: " + style);
 }
 
-unique_ptr<SegmenterBase> SegmenterFactory::create(SegmentationStyle style) {
+//factory method implementation to create segmenter object based on selected segmentation style
+std::unique_ptr<SegmenterBase> SegmenterFactory::create(SegmentationStyle style) {
     switch (style) {
         case SegmentationStyle::Threshold:
-            return make_unique<ThresholdSegmenter>(
+            return std::make_unique<ThresholdSegmenter>(
                 ConfigLoader::getParam("Threshold", "threshold"),
                 ConfigLoader::getParam("Threshold", "maxValue")
             );
         case SegmentationStyle::Canny:
-            return make_unique<CannySegmenter>(
+            return std::make_unique<CannySegmenter>(
                 ConfigLoader::getParam("Canny", "lowThreshold"),
                 ConfigLoader::getParam("Canny", "highThreshold")
             );
         default:
-            throw invalid_argument("Unknown segmentation style.");
+            throw std::invalid_argument("Unknown segmentation style.");
     }
 }
