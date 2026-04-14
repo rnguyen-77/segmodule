@@ -74,12 +74,12 @@ clean: CMakeFiles/basicseg.dir/clean
 CMakeFiles/basicseg.dir/all:
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/depend
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=1,2 "Built target basicseg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=1,2,3 "Built target basicseg"
 .PHONY : CMakeFiles/basicseg.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/basicseg.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles 3
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/basicseg.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles 0
 .PHONY : CMakeFiles/basicseg.dir/rule

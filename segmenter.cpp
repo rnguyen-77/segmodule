@@ -1,11 +1,11 @@
 #include "segmenter.hpp"
 #include <stdexcept>
 
-// 
+//
 std::map<std::string, std::map<std::string, double>> ConfigLoader::config_;
 YAML::Node ConfigLoader::root_;
 
-//
+//implementation of configuration loading from YAML file
 void ConfigLoader::loadConfig(const std::string& filename) {
     root_ = YAML::LoadFile(filename);
     config_.clear();
@@ -13,7 +13,7 @@ void ConfigLoader::loadConfig(const std::string& filename) {
     if (!root_["activeStyle"] || !root_["activeStyle"].IsScalar()){
         throw std::runtime_error("activeStyle missing or not a string");
     }
-    for (const auto& kv:root_){
+    for (const auto& kv:root_){ //iterate through top-level keys in YAML file
         const std::string style = kv.first.as<std::string>();
         if (style == "activeStyle") {
             continue;
@@ -22,7 +22,7 @@ void ConfigLoader::loadConfig(const std::string& filename) {
         if (!params.IsMap()){
             throw std::runtime_error("Style block must be a map: " + style);
         }
-        for (const auto& p:params){
+        for (const auto& p:params){ //iterate through parameters for each style
             const std::string paramName = p.first.as<std::string>();
             double paramValue = 0.0;
             try {
@@ -40,7 +40,7 @@ void ConfigLoader::loadConfig(const std::string& filename) {
     }
 }
 
-//
+//returns active segmentation style name from config
 std::string ConfigLoader::getActiveStyle() {
     if (!root_["activeStyle"] || !root_ || !root_["activeStyle"].IsScalar()){
         throw std::runtime_error("activeStyle missing or not a string");
@@ -59,11 +59,14 @@ double ConfigLoader::getParam(const std::string& styleName, const std::string& p
     return config_[styleName][paramName];
 }
 
-//base class implementation for common functionality like converting input image to grayscale
-cv::Mat SegmenterBase::toGray(const cv::Mat& input) const {
-    if (input.empty()) {
-        throw std::invalid_argument("Input image is empty.");
-    }
+//ALOG image class adapter
+cv::Mat SegmenterBase::convertALOGtoMat(const ALOG& alog) const {
+    //placeholder implementation 
+    return cv::Mat();
+}
+
+//helper function for common preprocessing step to convert input image to grayscale if needed
+cv::Mat CommonSegmenter::toGray(const cv::Mat& input) const {
     if (input.channels() == 1) {
         return input;
     }
@@ -72,40 +75,21 @@ cv::Mat SegmenterBase::toGray(const cv::Mat& input) const {
     return gray;
 }
 
-//
-SegmentationResult SegmenterBase::segmentWithFeatures(const cv::Mat& input) const {
-    if (input.empty()) {
-        throw std::invalid_argument("Input image is empty.");
-    }
+//feature extraction concept - more complex feature extraction would be contained and imported from feature module in future
+SegmentationResult SegmenterBase::extractFeatures(const cv::Mat& input) const {
+    SegmentationResult result;
 
-    cv::Mat labelImage;
+    //simple placeholder logic 
+    cv::Mat output;
     cv::Mat stats;
     cv::Mat centroids;
-    cv::connectedComponentsWithStats(input, labelImage, stats, centroids);
+    cv::connectedComponentsWithStats(input, output, stats, centroids);
 
-    SegmentationResult result;
-    result.labels = labelImage;
+    result.labelImage = output;
     result.objects.clear();
 
-    const int numLabels = stats.rows; // label 0 is background
-    for (int label = 1; label < numLabels; ++label) {
-        ObjectFeatures obj{};
-        obj.labelID = label;
+    //logic to populate object vector would be contained below
 
-        obj.area = stats.at<int>(label, cv::CC_STAT_AREA);
-
-        const int left   = stats.at<int>(label, cv::CC_STAT_LEFT);
-        const int top    = stats.at<int>(label, cv::CC_STAT_TOP);
-        const int width  = stats.at<int>(label, cv::CC_STAT_WIDTH);
-        const int height = stats.at<int>(label, cv::CC_STAT_HEIGHT);
-        obj.bbox = cv::Rect(left, top, width, height);
-
-        obj.centroid = cv::Point2d(
-            centroids.at<double>(label, 0), // x
-            centroids.at<double>(label, 1)  // y
-        );
-        result.objects.push_back(obj);
-    }
     return result;
 }
 

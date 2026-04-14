@@ -150,6 +150,33 @@ basicseg.cpp.s:
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/basicseg.cpp.s
 .PHONY : basicseg.cpp.s
 
+segmenter.o: segmenter.cpp.o
+
+.PHONY : segmenter.o
+
+# target to build an object file
+segmenter.cpp.o:
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenter.cpp.o
+.PHONY : segmenter.cpp.o
+
+segmenter.i: segmenter.cpp.i
+
+.PHONY : segmenter.i
+
+# target to preprocess a source file
+segmenter.cpp.i:
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenter.cpp.i
+.PHONY : segmenter.cpp.i
+
+segmenter.s: segmenter.cpp.s
+
+.PHONY : segmenter.s
+
+# target to generate assembly for a file
+segmenter.cpp.s:
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenter.cpp.s
+.PHONY : segmenter.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,6 +189,9 @@ help:
 	@echo "... basicseg.o"
 	@echo "... basicseg.i"
 	@echo "... basicseg.s"
+	@echo "... segmenter.o"
+	@echo "... segmenter.i"
+	@echo "... segmenter.s"
 .PHONY : help
 
 

@@ -16,7 +16,7 @@
 class ConfigLoader {
 public:
     static void loadConfig(const std::string& filename);
-    static std::string getActiveStyle();
+    static std::string getActiveStyle(); 
     static double getParam(const std::string& styleName, const std::string& paramName);
 
 private:
@@ -30,32 +30,47 @@ enum class SegmentationStyle {
     Canny
 };
 
-//
-struct ObjectFeatures {
+//class wrapper for segmented objects
+class ObjectFeatures {
+public: //future utility functions
+    int getArea() const { return area; }
+private:
     int labelID;
     int area;
     cv::Rect bbox;
     cv::Point2d centroid;
+
+    //placeholder metadata for future concept
+    std::string category;
+    bool isSignificant;
 };
 
-//
+//struct to hold segmentation results
 struct SegmentationResult {
-    cv::Mat labels;
-    std::vector<ObjectFeatures> objects;
+    cv::Mat labelImage; //expected image/CT image output
+    std::vector<ObjectFeatures> objects; //vector to store segmented objects - objects characterized by ObjectFeatures class
 };
 
 //base class for image segmenters
 class SegmenterBase {
 public:
     virtual ~SegmenterBase() = default; //virtual destructor to ensure proper cleanup of derived class objects through base class pointers
-    virtual cv::Mat segment(const cv::Mat& input) const = 0; //pure virtual function to be implemented by derived classes
-    SegmentationResult segmentWithFeatures(const cv::Mat& input) const;
+    virtual cv::Mat segment(const cv::Mat& input) const = 0; //pure virtual function to be implemented by derived classes 
+protected:
+    SegmentationResult extractFeatures(const cv::Mat& input) const; 
+    cv::Mat convertALOGtoMat(const ALOG& alog) const; //placeholder concept: converts ALOG images (from bagLoader module) to OpenCV Mat format for processing
+};
+
+//
+class CommonSegmenter : public SegmenterBase {
+public:
+    virtual cv::Mat segment(const cv::Mat& input) const = 0;
 protected:
     cv::Mat toGray(const cv::Mat& input) const;
 };
 
 //derived class for thresholding segmentation
-class ThresholdSegmenter : public SegmenterBase {
+class ThresholdSegmenter : public CommonSegmenter {
 public:
     ThresholdSegmenter(double threshold, double maxValue)
         : threshold_(threshold), maxValue_(maxValue) {}
@@ -68,13 +83,13 @@ private:
 };
 
 //derived class for Canny edge detection segmentation
-class CannySegmenter : public SegmenterBase {
+class CannySegmenter : public CommonSegmenter {
 public:
     CannySegmenter(double lowThreshold, double highThreshold)
         : lowThreshold_(lowThreshold), highThreshold_(highThreshold) {}
 
     cv::Mat segment(const cv::Mat& input) const override;
-
+  
 private:
     double lowThreshold_;
     double highThreshold_;

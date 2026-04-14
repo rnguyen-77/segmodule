@@ -1,36 +1,6 @@
 #include "segmenter.hpp"
 #include <iostream>
 
-namespace {
-    cv::Mat createAnnotatedView(const cv::Mat& image, const SegmentationResult& result) {
-    cv::Mat annotated;
-    if (image.channels() == 1) {
-        cv::cvtColor(image, annotated, cv::COLOR_GRAY2BGR);
-    } else {
-        annotated = image.clone();
-    }
-    for (const auto& object : result.objects) {
-        cv::rectangle(annotated, object.bbox, cv::Scalar(0, 255, 0), 2);
-        cv::circle(annotated, object.centroid, 4, cv::Scalar(0, 0, 255), cv::FILLED);
-
-        const std::string labelText = "ID " + std::to_string(object.labelID);
-        const cv::Point textOrigin(
-            object.bbox.x,
-            std::max(20, object.bbox.y - 8)
-        );
-        cv::putText(
-            annotated,
-            labelText,
-            textOrigin,
-            cv::FONT_HERSHEY_SIMPLEX,
-            0.6,
-            cv::Scalar(255, 0, 0),
-            2
-        );
-    }
-    return annotated;
-}
-}
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -63,23 +33,15 @@ int main(int argc, char* argv[]) {
 
         //create segmenter object based on selected style using factory pattern
         const std::unique_ptr<SegmenterBase> segmenter = SegmenterFactory::create(style);
-        //segment the image using the created segmenter object
-        const cv::Mat mask = segmenter->segment(img);
-        const SegmentationResult result = segmenter->segmentWithFeatures(mask);
-        const cv::Mat annotatedMask = createAnnotatedView(mask, result);
+       
+        ALOG alogImage; //placeholder ALOG image - ideally imported from bagLoader module and stored for processing 
+        const cv::Mat conversion = segmenter->convertALOGtoMat(alogImage); //convert ALOG image to OpenCV Mat format
+        const cv::Mat segmented = segmenter->segment(conversion); //perform segmentation on converted image and return segmented mask
+        const SegmentationResult result = segmenter->extractFeatures(segmented); //extract features from segmented mask and store in SegmentationResult struct
 
-        std::cout << "Objects found: " << result.objects.size() << '\n';
-        for (const auto& o : result.objects) {
-            std::cout << "Label " << o.labelID
-                    << " area=" << o.area
-                    << " bbox=(" << o.bbox.x << "," << o.bbox.y
-                    << "," << o.bbox.width << "," << o.bbox.height << ")"
-                    << " centroid=(" << o.centroid.x << "," << o.centroid.y << ")\n";
-}
 
         cv::imshow("Original", img);
-        cv::imshow("Segmented - " + styleName, mask);
-        cv::imshow("Annotated Mask - " + styleName, annotatedMask);
+        cv::imshow("Segmented - " + styleName, segmented);
         cv::waitKey(0);
 
     } catch (const std::exception& ex) {
