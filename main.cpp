@@ -1,4 +1,5 @@
 #include "segmenter.hpp"
+#include "segmenterFactory.hpp"
 #include <iostream>
 
 
@@ -28,26 +29,19 @@ int main(int argc, char* argv[]) {
     try {
         //get active segmentation style from config unless user overrides it
         const std::string styleName = styleOverride.empty() ? ConfigLoader::getActiveStyle() : styleOverride;
-        //return enum value corresponding to activeStyle string
-        const SegmentationStyle style = parseStyle(styleName);
-
-        //create segmenter object based on selected style using factory pattern
-        const std::unique_ptr<SegmenterBase> segmenter = SegmenterFactory::create(style);
+        //create segmenter object based on selected style using factory method
+        const std::unique_ptr<SegmenterBase> segmenter = SegmenterFactory::create(styleName); 
        
         ALOG alogImage; //placeholder ALOG image - ideally imported from bagLoader module and stored for processing 
-        const cv::Mat conversion = segmenter->convertALOGtoMat(alogImage); //convert ALOG image to OpenCV Mat format
-        const cv::Mat segmented = segmenter->segment(conversion); //perform segmentation on converted image and return segmented mask
-        const SegmentationResult result = segmenter->extractFeatures(segmented); //extract features from segmented mask and store in SegmentationResult struct
-
-
+        const SegmentationResult result = segmenter->process(alogImage); //main processing function: converts ALOG image to Mat, applies segmentation, and extracts features
+    
         cv::imshow("Original", img);
-        cv::imshow("Segmented - " + styleName, segmented);
+        cv::imshow("Segmented - " + styleName, result.labelImage);
         cv::waitKey(0);
 
     } catch (const std::exception& ex) {
         std::cerr << "Segmentation error: " << ex.what() << '\n';
         return 1;
     }
-
     return 0;
 }

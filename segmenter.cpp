@@ -1,7 +1,7 @@
 #include "segmenter.hpp"
+#include "featureExtractor.hpp"
 #include <stdexcept>
 
-//
 std::map<std::string, std::map<std::string, double>> ConfigLoader::config_;
 YAML::Node ConfigLoader::root_;
 
@@ -10,10 +10,10 @@ void ConfigLoader::loadConfig(const std::string& filename) {
     root_ = YAML::LoadFile(filename);
     config_.clear();
 
-    if (!root_["activeStyle"] || !root_["activeStyle"].IsScalar()){
+    if (!root_["Segmentation"]["activeStyle"] || !root_["Segmentation"]["activeStyle"].IsScalar()){
         throw std::runtime_error("activeStyle missing or not a string");
     }
-    for (const auto& kv:root_){ //iterate through top-level keys in YAML file
+    for (const auto& kv:root_["Segmentation"]["Parameters"]){ //iterate through top-level keys in YAML file
         const std::string style = kv.first.as<std::string>();
         if (style == "activeStyle") {
             continue;
@@ -42,10 +42,10 @@ void ConfigLoader::loadConfig(const std::string& filename) {
 
 //returns active segmentation style name from config
 std::string ConfigLoader::getActiveStyle() {
-    if (!root_["activeStyle"] || !root_ || !root_["activeStyle"].IsScalar()){
+    if (!root_["Segmentation"]["activeStyle"] || !root_["Segmentation"]["activeStyle"].IsScalar()){
         throw std::runtime_error("activeStyle missing or not a string");
     }
-    return root_["activeStyle"].as<std::string>();
+    return root_["Segmentation"]["activeStyle"].as<std::string>();
 }
 
 //returns parameter value for given segmentation style and parameter name
@@ -59,10 +59,48 @@ double ConfigLoader::getParam(const std::string& styleName, const std::string& p
     return config_[styleName][paramName];
 }
 
+//reads feature names from the Features block in config and returns them as a vector of strings
+std::vector<std::string> ConfigLoader::getFeatureNames() {
+    if (!root_["Features"] || !root_["Features"].IsSequence()) {
+        throw std::runtime_error("Features block missing or not a sequence in config");
+    }
+
+    std::vector<std::string> names;
+    for (const auto& entry : root_["Features"]) {
+        if (!entry["name"] || !entry["name"].IsScalar()) {
+            throw std::runtime_error("Feature entry missing 'name' field");
+        }
+        names.push_back(entry["name"].as<std::string>());
+    }
+    return names;
+}
+
+//ObjectFeatures method implementations
+void ObjectFeatures::set(const std::string& name, const FeatureValue& value) {
+    features_[name] = value;
+}
+
+FeatureValue ObjectFeatures::get(const std::string& name) const {
+    auto it = features_.find(name);
+    if (it == features_.end()) {
+        throw std::out_of_range("Feature not found: " + name);
+    }
+    return it->second;
+}
+
+bool ObjectFeatures::has(const std::string& name) const {
+    return features_.contains(name);
+}
+
 //ALOG image class adapter
-cv::Mat SegmenterBase::convertALOGtoMat(const ALOG& alog) const {
+cv::Mat CommonSegmenter::convertALOGtoMat(const ALOG& alog) const {
     //placeholder implementation 
     return cv::Mat();
+}
+
+ALOG CommonSegmenter::convertMatToALOG(const cv::Mat& mat) const {
+    //placeholder implementation 
+    return ALOG();
 }
 
 //helper function for common preprocessing step to convert input image to grayscale if needed
@@ -75,63 +113,53 @@ cv::Mat CommonSegmenter::toGray(const cv::Mat& input) const {
     return gray;
 }
 
-//feature extraction concept - more complex feature extraction would be contained and imported from feature module in future
-SegmentationResult SegmenterBase::extractFeatures(const cv::Mat& input) const {
-    SegmentationResult result;
-
-    //simple placeholder logic 
-    cv::Mat output;
-    cv::Mat stats;
-    cv::Mat centroids;
-    cv::connectedComponentsWithStats(input, output, stats, centroids);
-
-    result.labelImage = output;
-    result.objects.clear();
-
-    //logic to populate object vector would be contained below
-
-    return result;
-}
-
 //implementation of thresholding segmentation using OpenCV's threshold function
-cv::Mat ThresholdSegmenter::segment(const cv::Mat& input) const {
-    cv::Mat gray = toGray(input);
+void ThresholdSegmenter::segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
+    cv::Mat cvMat = convertALOGtoMat(alogInput);
+
+    cv::Mat gray = toGray(cvMat);
     cv::Mat mask;
     cv::threshold(gray, mask, threshold_, maxValue_, cv::THRESH_BINARY);
-    return mask;
+
+    extractFeatures(mask, labelImage, objects);
 }
 
 //implementation of Canny edge detection segmentation using OpenCV's Canny function
-cv::Mat CannySegmenter::segment(const cv::Mat& input) const {
-    cv::Mat gray = toGray(input);
+void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
+    cv::Mat cvMat = convertALOGtoMat(alogInput);
+
+    cv::Mat gray = toGray(cvMat);
     cv::Mat blurred;
     cv::GaussianBlur(gray, blurred, cv::Size(5, 5), 1.0);
     cv::Mat edges;
     cv::Canny(blurred, edges, lowThreshold_, highThreshold_);
-    return edges;
+
+    extractFeatures(edges, labelImage, objects);
 }
 
-//helper function to parse active segmentation style string from config and return corresponding enum value
-SegmentationStyle parseStyle(const std::string& style) {
-    if (style == "Threshold") return SegmentationStyle::Threshold;
-    if (style == "Canny") return SegmentationStyle::Canny;
-    throw std::invalid_argument("Unknown activeStyle in config: " + style);
-}
+//feature extraction: runs connected component analysis then populates one ObjectFeatures per component
+void CommonSegmenter::extractFeatures(const cv::Mat& mask, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
+    const std::vector<std::string> featureNames = ConfigLoader::getFeatureNames();
 
-//factory method implementation to create segmenter object based on selected segmentation style
-std::unique_ptr<SegmenterBase> SegmenterFactory::create(SegmentationStyle style) {
-    switch (style) {
-        case SegmentationStyle::Threshold:
-            return std::make_unique<ThresholdSegmenter>(
-                ConfigLoader::getParam("Threshold", "threshold"),
-                ConfigLoader::getParam("Threshold", "maxValue")
-            );
-        case SegmentationStyle::Canny:
-            return std::make_unique<CannySegmenter>(
-                ConfigLoader::getParam("Canny", "lowThreshold"),
-                ConfigLoader::getParam("Canny", "highThreshold")
-            );
-        default:
-            throw std::invalid_argument("Unknown segmentation style.");
+    cv::Mat labelMat, stats, centroids;
+    int numComponents = cv::connectedComponentsWithStats(mask, labelMat, stats, centroids);
+
+    labelImage = convertMatToALOG(labelMat); //placeholder until ALOG class is ready
+
+    //build lookup map here so lambdas can capture stats/centroids from this scope
+    const auto featureLookup = buildFeatureLookup(stats, centroids);
+
+    for (int i = 1; i < numComponents; ++i) { //skip component 0 (background)
+        ObjectFeatures obj;
+
+        for (const auto& name : featureNames) {
+            auto it = featureLookup.find(name);
+            if (it != featureLookup.end()) {
+                obj.set(name, it->second(i)); //call the generic lambda for this component
+            }
+        }
+
+        objects.push_back(obj);
     }
 }
+

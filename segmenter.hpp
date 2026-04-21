@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fstream>
 #include <map>
 #include <memory>
 #include <stdexcept>
@@ -11,6 +10,8 @@
 #include <opencv2/imgproc.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include "featureExtractor.hpp" //FeatureValue type and feature computation map
+
 
 //class to load and store configuration parameters for segmenters
 class ConfigLoader {
@@ -18,55 +19,37 @@ public:
     static void loadConfig(const std::string& filename);
     static std::string getActiveStyle(); 
     static double getParam(const std::string& styleName, const std::string& paramName);
-
+    static std::vector<std::string> getFeatureNames();
 private:
     static std::map<std::string, std::map<std::string, double>> config_; //nested map to store parameters for each segmentation style
     static YAML::Node root_;
 };
 
-//enum class to define different segmentation styles
-enum class SegmentationStyle {
-    Threshold,
-    Canny
-};
-
 //class wrapper for segmented objects
+//FeatureValue type alias is defined in featureExtractor.hpp
 class ObjectFeatures {
-public: //future utility functions
-    int getArea() const { return area; }
+public:
+    void set(const std::string& name, const FeatureValue& value);
+    FeatureValue get(const std::string& name) const;
+    bool has(const std::string& name) const;
 private:
-    int labelID;
-    int area;
-    cv::Rect bbox;
-    cv::Point2d centroid;
-
-    //placeholder metadata for future concept
-    std::string category;
-    bool isSignificant;
-};
-
-//struct to hold segmentation results
-struct SegmentationResult {
-    cv::Mat labelImage; //expected image/CT image output
-    std::vector<ObjectFeatures> objects; //vector to store segmented objects - objects characterized by ObjectFeatures class
+    std::map<std::string, FeatureValue> features_;
 };
 
 //base class for image segmenters
 class SegmenterBase {
 public:
     virtual ~SegmenterBase() = default; //virtual destructor to ensure proper cleanup of derived class objects through base class pointers
-    virtual cv::Mat segment(const cv::Mat& input) const = 0; //pure virtual function to be implemented by derived classes 
-protected:
-    SegmentationResult extractFeatures(const cv::Mat& input) const; 
-    cv::Mat convertALOGtoMat(const ALOG& alog) const; //placeholder concept: converts ALOG images (from bagLoader module) to OpenCV Mat format for processing
+    virtual void segment(const ALOG& alogInput, ALOG& alogOutput, std::vector<ObjectFeatures>& objects) const = 0; //pure virtual function to be implemented by derived classes
 };
 
-//
+//derived class for common functions shared by multiple segmentation styles (e.g. grayscale conversion)
 class CommonSegmenter : public SegmenterBase {
-public:
-    virtual cv::Mat segment(const cv::Mat& input) const = 0;
 protected:
     cv::Mat toGray(const cv::Mat& input) const;
+    void extractFeatures(const cv::Mat& input, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const;
+    cv::Mat convertALOGtoMat(const ALOG& alog) const; //placeholder concept: converts ALOG images (from bagLoader module) to OpenCV Mat format for processing
+    cv::Mat convertMatToALOG(const cv::Mat& mat) const; //placeholder concept: converts processed OpenCV Mat back to ALOG format for output
 };
 
 //derived class for thresholding segmentation
@@ -75,7 +58,7 @@ public:
     ThresholdSegmenter(double threshold, double maxValue)
         : threshold_(threshold), maxValue_(maxValue) {}
 
-    cv::Mat segment(const cv::Mat& input) const override;
+    void segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const override;
 
 private:
     double threshold_;
@@ -88,18 +71,9 @@ public:
     CannySegmenter(double lowThreshold, double highThreshold)
         : lowThreshold_(lowThreshold), highThreshold_(highThreshold) {}
 
-    cv::Mat segment(const cv::Mat& input) const override;
+    void segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const override;
   
 private:
     double lowThreshold_;
     double highThreshold_;
 };
-
-//factory class: creates segmenter objects based on style enum
-class SegmenterFactory {
-public:
-    static std::unique_ptr<SegmenterBase> create(SegmentationStyle style);
-};
-
-//function to parse string representation of segmentation style from YAML file
-SegmentationStyle parseStyle(const std::string& style);
