@@ -1,8 +1,25 @@
-activeStyle: Canny
-
-Threshold:
-  threshold: 160.0
-  maxValue: 255.0
-Canny:
-  lowThreshold: 50.0
-  highThreshold: 150.0
+Segmentation:
+  activeStyle: Canny
+  Parameters:
+    Threshold:
+      threshold: 160.0
+      maxValue: 255.0
+    Canny:
+      lowThreshold: 50.0
+      highThreshold: 150.0
+Features:
+  - name: labelID
+    description: "A unique identifier for each segmented object."
+    type: "int"
+  - name: Area
+    description: "The area of the segmented object in pixels."
+    type: "float"
+  - name: Centroid
+    description: "The (x, y) coordinates of the center of mass of the segmented object."
+    type: "tuple"
+  - name: BoundingBox
+    description: "The coordinates of the bounding box around the segmented object (x, y, width, height)."
+    type: "tuple"
+  - name: Density
+    description: "The density of the segmented object, calculated as the ratio of the area to the bounding box area."
+    type: "float"  
