@@ -12,5 +12,9 @@ using FeatureValue = std::variant<int, float, double, cv::Point2d, cv::Rect, std
 
 //generic type alias for a feature computation function:
 //takes only a component index - each lambda captures its own data sources via closure
-//this keeps the interface independent of any specific library (OpenCV, ITK, bagLoader, etc.)
 using FeatureComputer = std::function<FeatureValue(int i)>;
+
+//builds a map of feature name -> FeatureComputer for one extractFeatures call
+//stats and centroids are captured by reference inside each lambda - add new parameters here
+//when adding a feature that needs a different data source (e.g. custom metadata struct)
+std::map<std::string, FeatureComputer> buildFeatureLookup(const cv::Mat& stats, const cv::Mat& centroids);

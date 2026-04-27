@@ -2,10 +2,11 @@
 #include "featureExtractor.hpp"
 #include <stdexcept>
 
-std::map<std::string, std::map<std::string, double>> ConfigLoader::config_;
-YAML::Node ConfigLoader::root_;
+ConfigLoader::ConfigLoader(const std::string& filename) {
+    loadConfig(filename);
+}
 
-//implementation of configuration loading from YAML file
+//loads and parses configuration from YAML file - called only from constructor
 void ConfigLoader::loadConfig(const std::string& filename) {
     root_ = YAML::LoadFile(filename);
     config_.clear();
@@ -13,6 +14,8 @@ void ConfigLoader::loadConfig(const std::string& filename) {
     if (!root_["Segmentation"]["activeStyle"] || !root_["Segmentation"]["activeStyle"].IsScalar()){
         throw std::runtime_error("activeStyle missing or not a string");
     }
+    activeStyle_ = root_["Segmentation"]["activeStyle"].as<std::string>();
+
     for (const auto& kv:root_["Segmentation"]["Parameters"]){ //iterate through top-level keys in YAML file
         const std::string style = kv.first.as<std::string>();
         if (style == "activeStyle") {
@@ -34,22 +37,19 @@ void ConfigLoader::loadConfig(const std::string& filename) {
             config_[style][paramName] = paramValue;
         }
     }
-    const std::string active = getActiveStyle();
+    const std::string active = activeStyle_;
     if (!config_.contains(active)){
         throw std::runtime_error("activeStyle does not match any style block: " + active);
     }
 }
 
 //returns active segmentation style name from config
-std::string ConfigLoader::getActiveStyle() {
-    if (!root_["Segmentation"]["activeStyle"] || !root_["Segmentation"]["activeStyle"].IsScalar()){
-        throw std::runtime_error("activeStyle missing or not a string");
-    }
-    return root_["Segmentation"]["activeStyle"].as<std::string>();
+std::string ConfigLoader::getActiveStyle() const {
+    return activeStyle_;
 }
 
 //returns parameter value for given segmentation style and parameter name
-double ConfigLoader::getParam(const std::string& styleName, const std::string& paramName) {
+double ConfigLoader::getParam(const std::string& styleName, const std::string& paramName) const {
     if (!config_.contains(styleName)) {
         throw std::runtime_error("Segmentation style not found in config: " + styleName);
     }
@@ -60,7 +60,7 @@ double ConfigLoader::getParam(const std::string& styleName, const std::string& p
 }
 
 //reads feature names from the Features block in config and returns them as a vector of strings
-std::vector<std::string> ConfigLoader::getFeatureNames() {
+std::vector<std::string> ConfigLoader::getFeatureNames() const {
     if (!root_["Features"] || !root_["Features"].IsSequence()) {
         throw std::runtime_error("Features block missing or not a sequence in config");
     }
@@ -139,8 +139,6 @@ void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, std::vecto
 
 //feature extraction: runs connected component analysis then populates one ObjectFeatures per component
 void CommonSegmenter::extractFeatures(const cv::Mat& mask, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
-    const std::vector<std::string> featureNames = ConfigLoader::getFeatureNames();
-
     cv::Mat labelMat, stats, centroids;
     int numComponents = cv::connectedComponentsWithStats(mask, labelMat, stats, centroids);
 
@@ -152,7 +150,7 @@ void CommonSegmenter::extractFeatures(const cv::Mat& mask, ALOG& labelImage, std
     for (int i = 1; i < numComponents; ++i) { //skip component 0 (background)
         ObjectFeatures obj;
 
-        for (const auto& name : featureNames) {
+        for (const auto& name : featureNames_) {
             auto it = featureLookup.find(name);
             if (it != featureLookup.end()) {
                 obj.set(name, it->second(i)); //call the generic lambda for this component

@@ -10,23 +10,25 @@
 #include <opencv2/imgproc.hpp>
 #include <yaml-cpp/yaml.h>
 
-#include "featureExtractor.hpp" //FeatureValue type and feature computation map
+#include "featureExtractor.hpp" 
 
 
 //class to load and store configuration parameters for segmenters
+//construct with a filename - object is always fully loaded after construction
 class ConfigLoader {
 public:
-    static void loadConfig(const std::string& filename);
-    static std::string getActiveStyle(); 
-    static double getParam(const std::string& styleName, const std::string& paramName);
-    static std::vector<std::string> getFeatureNames();
+    explicit ConfigLoader(const std::string& filename); //loads config immediately on construction
+    std::string getActiveStyle() const; 
+    double getParam(const std::string& styleName, const std::string& paramName) const;
+    std::vector<std::string> getFeatureNames() const;
 private:
-    static std::map<std::string, std::map<std::string, double>> config_; //nested map to store parameters for each segmentation style
-    static YAML::Node root_;
+    void loadConfig(const std::string& filename);
+    std::map<std::string, std::map<std::string, double>> config_; //nested map to store parameters for each segmentation style
+    YAML::Node root_;
+    std::string activeStyle_;
 };
 
 //class wrapper for segmented objects
-//FeatureValue type alias is defined in featureExtractor.hpp
 class ObjectFeatures {
 public:
     void set(const std::string& name, const FeatureValue& value);
@@ -46,17 +48,23 @@ public:
 //derived class for common functions shared by multiple segmentation styles (e.g. grayscale conversion)
 class CommonSegmenter : public SegmenterBase {
 protected:
+    explicit CommonSegmenter(std::vector<std::string> featureNames)
+        : featureNames_(std::move(featureNames)) {}
+
     cv::Mat toGray(const cv::Mat& input) const;
     void extractFeatures(const cv::Mat& input, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const;
     cv::Mat convertALOGtoMat(const ALOG& alog) const; //placeholder concept: converts ALOG images (from bagLoader module) to OpenCV Mat format for processing
-    cv::Mat convertMatToALOG(const cv::Mat& mat) const; //placeholder concept: converts processed OpenCV Mat back to ALOG format for output
+    ALOG convertMatToALOG(const cv::Mat& mat) const; //placeholder concept: converts processed OpenCV Mat back to ALOG format for output
+
+private:
+    std::vector<std::string> featureNames_; //feature names set at construction time - no config dependency during processing
 };
 
 //derived class for thresholding segmentation
 class ThresholdSegmenter : public CommonSegmenter {
 public:
-    ThresholdSegmenter(double threshold, double maxValue)
-        : threshold_(threshold), maxValue_(maxValue) {}
+    ThresholdSegmenter(double threshold, double maxValue, std::vector<std::string> featureNames)
+        : CommonSegmenter(std::move(featureNames)), threshold_(threshold), maxValue_(maxValue) {}
 
     void segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const override;
 
@@ -68,8 +76,8 @@ private:
 //derived class for Canny edge detection segmentation
 class CannySegmenter : public CommonSegmenter {
 public:
-    CannySegmenter(double lowThreshold, double highThreshold)
-        : lowThreshold_(lowThreshold), highThreshold_(highThreshold) {}
+    CannySegmenter(double lowThreshold, double highThreshold, std::vector<std::string> featureNames)
+        : CommonSegmenter(std::move(featureNames)), lowThreshold_(lowThreshold), highThreshold_(highThreshold) {}
 
     void segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const override;
   

@@ -14,29 +14,21 @@ int main(int argc, char* argv[]) {
     const std::string styleOverride = (argc > 3) ? argv[3] : "";
 
     try {
-        ConfigLoader::loadConfig(configPath); //load configuration parameters from YAML file
-    } catch (const std::exception& ex) {
-        std::cerr << "Error: " << ex.what() << '\n';
-        return 1;
-    }
+        ConfigLoader config(configPath); //construct and load config - throws on bad file or schema
 
-    const cv::Mat img = cv::imread(imagePath);
-    if (img.empty()) {
-        std::cerr << "Failed to load image: " << imagePath << '\n';
-        return 1;
-    }
-
-    try {
         //get active segmentation style from config unless user overrides it
-        const std::string styleName = styleOverride.empty() ? ConfigLoader::getActiveStyle() : styleOverride;
+        const std::string styleName = styleOverride.empty() ? config.getActiveStyle() : styleOverride;
         //create segmenter object based on selected style using factory method
-        const std::unique_ptr<SegmenterBase> segmenter = SegmenterFactory::create(styleName); 
+        const std::unique_ptr<SegmenterBase> segmenter = SegmenterFactory::create(styleName, config);
        
-        ALOG alogImage; //placeholder ALOG image - ideally imported from bagLoader module and stored for processing 
-        const SegmentationResult result = segmenter->process(alogImage); //main processing function: converts ALOG image to Mat, applies segmentation, and extracts features
+        ALOG alogImage = load(imagePath); //placeholder ALOG image - replace load logic once ALOG image class is defined
+        std::vector<ObjectFeatures> objects;
+        ALOG alogLabelImage; //placeholder ALOG image to hold segmentation output
+
+        segmenter->segment(alogImage, alogLabelImage, objects); //segment image and extract features
     
-        cv::imshow("Original", img);
-        cv::imshow("Segmented - " + styleName, result.labelImage);
+        cv::imshow("Original", CommonSegmenter::convertALOGtoMat(alogImage)); //processing/display to be adjusted in the future 
+        cv::imshow("Segmented - " + styleName, CommonSegmenter::convertALOGtoMat(alogLabelImage));
         cv::waitKey(0);
 
     } catch (const std::exception& ex) {
