@@ -16,3 +16,21 @@ target_link_libraries(basicseg PRIVATE ${OpenCV_LIBS} yaml-cpp)
 
 message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
 message(STATUS "Include Directory: ${OpenCV_INCLUDE_DIRS}")
+
+enable_testing()
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+
+add_executable(segmenter_test
+    tests/segmenter_test.cpp
+    segmenter.cpp
+    segmenterFactory.cpp
+    featureExtractor.cpp
+)
+target_link_libraries(segmenter_test PRIVATE
+    ${OpenCV_LIBS}
+    yaml-cpp
+    GTest::GTest
+    GTest::Main
+)
+add_test(NAME segmenter_test COMMAND segmenter_test)

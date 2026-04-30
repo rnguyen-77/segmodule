@@ -14,13 +14,12 @@
 
 
 //class to load and store configuration parameters for segmenters
-//construct with a filename - object is always fully loaded after construction
 class ConfigLoader {
 public:
-    explicit ConfigLoader(const std::string& filename); //loads config immediately on construction
-    std::string getActiveStyle() const; 
-    double getParam(const std::string& styleName, const std::string& paramName) const;
-    std::vector<std::string> getFeatureNames() const;
+    explicit ConfigLoader(const std::string& filename); //constructor that loads config from file
+    std::string getActiveStyle() const; //returns active segmentation style name from config
+    double getParam(const std::string& styleName, const std::string& paramName) const; //returns parameter value for given segmentation style and parameter name
+    std::vector<std::string> getFeatureNames() const; //returns feature names from config as a vector of strings
 private:
     void loadConfig(const std::string& filename);
     std::map<std::string, std::map<std::string, double>> config_; //nested map to store parameters for each segmentation style
@@ -31,6 +30,7 @@ private:
 //class wrapper for segmented objects
 class ObjectFeatures {
 public:
+    //simple placeholder functions 
     void set(const std::string& name, const FeatureValue& value);
     FeatureValue get(const std::string& name) const;
     bool has(const std::string& name) const;
@@ -48,7 +48,7 @@ public:
 //derived class for common functions shared by multiple segmentation styles (e.g. grayscale conversion)
 class CommonSegmenter : public SegmenterBase {
 protected:
-    explicit CommonSegmenter(std::vector<std::string> featureNames)
+    explicit CommonSegmenter(std::vector<std::string> featureNames) //constructor to set feature names at time of segmenter construction - passed from factory after reading from config
         : featureNames_(std::move(featureNames)) {}
 
     cv::Mat toGray(const cv::Mat& input) const;
@@ -57,7 +57,7 @@ protected:
     ALOG convertMatToALOG(const cv::Mat& mat) const; //placeholder concept: converts processed OpenCV Mat back to ALOG format for output
 
 private:
-    std::vector<std::string> featureNames_; //feature names set at construction time - no config dependency during processing
+    std::vector<std::string> featureNames_; //stores feature names on segmenter to avoid dependency on ConfigLoader during segment()
 };
 
 //derived class for thresholding segmentation
