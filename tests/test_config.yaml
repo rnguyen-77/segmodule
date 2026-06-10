@@ -2,7 +2,7 @@ Segmentation:
   activeStyle: Canny
   Parameters:
     Threshold:
-      threshold: 160.0
+      threshold: 120.0
       maxValue: 255.0
     Canny:
       lowThreshold: 50.0
@@ -18,4 +18,4 @@ Features:
     description: "The coordinates of the bounding box around the segmented object (x, y, width, height)."
   - name: Density
     description: "The density of the segmented object, calculated as the ratio of the area to the bounding box area."
- 
+  

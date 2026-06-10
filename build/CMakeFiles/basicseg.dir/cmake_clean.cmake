@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/basicseg.dir/basicseg.cpp.o"
+  "CMakeFiles/basicseg.dir/featureExtractor.cpp.o"
+  "CMakeFiles/basicseg.dir/main.cpp.o"
   "CMakeFiles/basicseg.dir/segmenter.cpp.o"
+  "CMakeFiles/basicseg.dir/segmenterFactory.cpp.o"
   "basicseg"
   "basicseg.pdb"
 )

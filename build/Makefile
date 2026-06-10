@@ -78,6 +78,17 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+
+.PHONY : test/fast
+
 # The main all target
 all: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/progress.marks
@@ -111,6 +122,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named segmenter_test
+
+# Build rule for target.
+segmenter_test: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 segmenter_test
+.PHONY : segmenter_test
+
+# fast build rule for target.
+segmenter_test/fast:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/build
+.PHONY : segmenter_test/fast
+
+#=============================================================================
 # Target rules for targets named basicseg
 
 # Build rule for target.
@@ -123,32 +147,62 @@ basicseg/fast:
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/build
 .PHONY : basicseg/fast
 
-basicseg.o: basicseg.cpp.o
+featureExtractor.o: featureExtractor.cpp.o
 
-.PHONY : basicseg.o
+.PHONY : featureExtractor.o
 
 # target to build an object file
-basicseg.cpp.o:
-	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/basicseg.cpp.o
-.PHONY : basicseg.cpp.o
+featureExtractor.cpp.o:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/featureExtractor.cpp.o
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/featureExtractor.cpp.o
+.PHONY : featureExtractor.cpp.o
 
-basicseg.i: basicseg.cpp.i
+featureExtractor.i: featureExtractor.cpp.i
 
-.PHONY : basicseg.i
+.PHONY : featureExtractor.i
 
 # target to preprocess a source file
-basicseg.cpp.i:
-	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/basicseg.cpp.i
-.PHONY : basicseg.cpp.i
+featureExtractor.cpp.i:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/featureExtractor.cpp.i
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/featureExtractor.cpp.i
+.PHONY : featureExtractor.cpp.i
 
-basicseg.s: basicseg.cpp.s
+featureExtractor.s: featureExtractor.cpp.s
 
-.PHONY : basicseg.s
+.PHONY : featureExtractor.s
 
 # target to generate assembly for a file
-basicseg.cpp.s:
-	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/basicseg.cpp.s
-.PHONY : basicseg.cpp.s
+featureExtractor.cpp.s:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/featureExtractor.cpp.s
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/featureExtractor.cpp.s
+.PHONY : featureExtractor.cpp.s
+
+main.o: main.cpp.o
+
+.PHONY : main.o
+
+# target to build an object file
+main.cpp.o:
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/main.cpp.o
+.PHONY : main.cpp.o
+
+main.i: main.cpp.i
+
+.PHONY : main.i
+
+# target to preprocess a source file
+main.cpp.i:
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/main.cpp.i
+.PHONY : main.cpp.i
+
+main.s: main.cpp.s
+
+.PHONY : main.s
+
+# target to generate assembly for a file
+main.cpp.s:
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 segmenter.o: segmenter.cpp.o
 
@@ -156,6 +210,7 @@ segmenter.o: segmenter.cpp.o
 
 # target to build an object file
 segmenter.cpp.o:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/segmenter.cpp.o
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenter.cpp.o
 .PHONY : segmenter.cpp.o
 
@@ -165,6 +220,7 @@ segmenter.i: segmenter.cpp.i
 
 # target to preprocess a source file
 segmenter.cpp.i:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/segmenter.cpp.i
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenter.cpp.i
 .PHONY : segmenter.cpp.i
 
@@ -174,8 +230,66 @@ segmenter.s: segmenter.cpp.s
 
 # target to generate assembly for a file
 segmenter.cpp.s:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/segmenter.cpp.s
 	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenter.cpp.s
 .PHONY : segmenter.cpp.s
+
+segmenterFactory.o: segmenterFactory.cpp.o
+
+.PHONY : segmenterFactory.o
+
+# target to build an object file
+segmenterFactory.cpp.o:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/segmenterFactory.cpp.o
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenterFactory.cpp.o
+.PHONY : segmenterFactory.cpp.o
+
+segmenterFactory.i: segmenterFactory.cpp.i
+
+.PHONY : segmenterFactory.i
+
+# target to preprocess a source file
+segmenterFactory.cpp.i:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/segmenterFactory.cpp.i
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenterFactory.cpp.i
+.PHONY : segmenterFactory.cpp.i
+
+segmenterFactory.s: segmenterFactory.cpp.s
+
+.PHONY : segmenterFactory.s
+
+# target to generate assembly for a file
+segmenterFactory.cpp.s:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/segmenterFactory.cpp.s
+	$(MAKE) -f CMakeFiles/basicseg.dir/build.make CMakeFiles/basicseg.dir/segmenterFactory.cpp.s
+.PHONY : segmenterFactory.cpp.s
+
+tests/segmenter_test.o: tests/segmenter_test.cpp.o
+
+.PHONY : tests/segmenter_test.o
+
+# target to build an object file
+tests/segmenter_test.cpp.o:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/tests/segmenter_test.cpp.o
+.PHONY : tests/segmenter_test.cpp.o
+
+tests/segmenter_test.i: tests/segmenter_test.cpp.i
+
+.PHONY : tests/segmenter_test.i
+
+# target to preprocess a source file
+tests/segmenter_test.cpp.i:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/tests/segmenter_test.cpp.i
+.PHONY : tests/segmenter_test.cpp.i
+
+tests/segmenter_test.s: tests/segmenter_test.cpp.s
+
+.PHONY : tests/segmenter_test.s
+
+# target to generate assembly for a file
+tests/segmenter_test.cpp.s:
+	$(MAKE) -f CMakeFiles/segmenter_test.dir/build.make CMakeFiles/segmenter_test.dir/tests/segmenter_test.cpp.s
+.PHONY : tests/segmenter_test.cpp.s
 
 # Help Target
 help:
@@ -185,13 +299,24 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... test"
+	@echo "... segmenter_test"
 	@echo "... basicseg"
-	@echo "... basicseg.o"
-	@echo "... basicseg.i"
-	@echo "... basicseg.s"
+	@echo "... featureExtractor.o"
+	@echo "... featureExtractor.i"
+	@echo "... featureExtractor.s"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 	@echo "... segmenter.o"
 	@echo "... segmenter.i"
 	@echo "... segmenter.s"
+	@echo "... segmenterFactory.o"
+	@echo "... segmenterFactory.i"
+	@echo "... segmenterFactory.s"
+	@echo "... tests/segmenter_test.o"
+	@echo "... tests/segmenter_test.i"
+	@echo "... tests/segmenter_test.s"
 .PHONY : help
 
 

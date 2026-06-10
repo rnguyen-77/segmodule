@@ -1,5 +1,4 @@
 #include "segmenter.hpp"
-#include "featureExtractor.hpp"
 #include <stdexcept>
 
 //constructor that loads config from file for any instance
@@ -60,37 +59,38 @@ double ConfigLoader::getParam(const std::string& styleName, const std::string& p
     return config_[styleName][paramName];
 }
 
-//reads feature names from the Features block in config and returns them as a vector of strings
-std::vector<std::string> ConfigLoader::getFeatureNames() const {
-    if (!root_["Features"] || !root_["Features"].IsSequence()) {
-        throw std::runtime_error("Features block missing or not a sequence in config");
-    }
-
-    std::vector<std::string> names; //feature names stored in a vector
-    for (const auto& entry : root_["Features"]) { //iterates through each entry under the Features block - assumes each type with auto due to potentially different types of features (e.g. numeric, string, boolean) 
-        if (!entry["name"] || !entry["name"].IsScalar()) {
-            throw std::runtime_error("Feature entry missing 'name' field");
-        }
-        names.push_back(entry["name"].as<std::string>()); //populates vector
-    }
-    return names;
-}
-
-//ObjectFeatures method implementations - placeholders
-void ObjectFeatures::set(const std::string& name, const FeatureValue& value) {
+//Objects feature map method implementations
+void Objects::setFeature(const std::string& name, double value) {
     features_[name] = value;
 }
 
-FeatureValue ObjectFeatures::get(const std::string& name) const {
-    auto it = features_.find(name); //lookup feature by name in map
+double Objects::getFeature(const std::string& name) const {
+    auto it = features_.find(name);
     if (it == features_.end()) {
         throw std::out_of_range("Feature not found: " + name);
     }
-    return it->second; //returns value from iterator if found
+    return it->second;
 }
 
-bool ObjectFeatures::has(const std::string& name) const {
+bool Objects::hasFeature(const std::string& name) const {
     return features_.contains(name);
+}
+
+//ObjectCollection method implementations
+void ObjectCollection::add(Objects obj) {
+    objects_.push_back(std::move(obj));
+}
+
+void ObjectCollection::clear() {
+    objects_.clear();
+}
+
+const std::vector<Objects>& ObjectCollection::all() const {
+    return objects_;
+}
+
+std::size_t ObjectCollection::size() const {
+    return objects_.size();
 }
 
 //ALOG image class adapter
@@ -115,18 +115,18 @@ cv::Mat CommonSegmenter::toGray(const cv::Mat& input) const {
 }
 
 //implementation of thresholding segmentation using OpenCV's threshold function
-void ThresholdSegmenter::segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
+void ThresholdSegmenter::segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const {
     cv::Mat cvMat = convertALOGtoMat(alogInput);
 
     cv::Mat gray = toGray(cvMat);
     cv::Mat mask;
     cv::threshold(gray, mask, threshold_, maxValue_, cv::THRESH_BINARY);
 
-    extractFeatures(mask, labelImage, objects);
+    findObjects(mask, labelImage, objects);
 }
 
 //implementation of Canny edge detection segmentation using OpenCV's Canny function
-void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
+void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const {
     cv::Mat cvMat = convertALOGtoMat(alogInput);
 
     cv::Mat gray = toGray(cvMat);
@@ -135,30 +135,24 @@ void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, std::vecto
     cv::Mat edges;
     cv::Canny(blurred, edges, lowThreshold_, highThreshold_);
 
-    extractFeatures(edges, labelImage, objects);
+    findObjects(edges, labelImage, objects);
 }
 
-//feature extraction: runs connected component analysis then populates one ObjectFeatures per component
-void CommonSegmenter::extractFeatures(const cv::Mat& mask, ALOG& labelImage, std::vector<ObjectFeatures>& objects) const {
+//runs connected component analysis on the binary mask to identify distinct objects and produce the labeled image
+void CommonSegmenter::findObjects(const cv::Mat& mask, ALOG& labelImage, ObjectCollection& objects) const {
     cv::Mat labelMat, stats, centroids;
     int numComponents = cv::connectedComponentsWithStats(mask, labelMat, stats, centroids);
 
     labelImage = convertMatToALOG(labelMat); //placeholder until ALOG class is ready
 
-    //lookup map from feature name to lambda that computes that feature for any given component index
-    const auto featureLookup = buildFeatureLookup(stats, centroids);
+    //label 0 is the background component - skip it and start from 1
+    for (int i = 1; i < numComponents; ++i) {
+        Objects obj(i);
+        obj.setFeature("Area",       static_cast<double>(stats.at<int>(i, cv::CC_STAT_AREA)));
+        obj.setFeature("Centroid_x", centroids.at<double>(i, 0));
+        obj.setFeature("Centroid_y", centroids.at<double>(i, 1));
 
-    //iterate through each component and populate ObjectFeatures based on feature names specified in config
-    for (int i = 1; i < numComponents; ++i) { //skip component 0 (background)
-        ObjectFeatures obj;
-
-        for (const auto& name : featureNames_) { //iterate through feature names specified in config 
-            auto it = featureLookup.find(name); //lookup lambda for feature name
-            if (it != featureLookup.end()) {
-                obj.set(name, it->second(i)); //call the lambda with the current component index to compute the feature value
-            }
-        }
-        objects.push_back(obj); //populates object vector with computed features for each component
+        objects.add(std::move(obj));
     }
 }
 

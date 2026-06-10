@@ -362,21 +362,39 @@ opencv2/imgproc.hpp
 opencv2/core.hpp
 ../opencv-install/include/opencv4/opencv2/opencv2/core.hpp
 
-/mnt/netapp/SECURITY/users/rnguyen/segModule/basicseg.cpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.cpp
+featureExtractor.hpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.hpp
+
+/mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.hpp
+functional
+-
+map
+-
+string
+-
+variant
+-
+opencv2/core.hpp
+-
+
+/mnt/netapp/SECURITY/users/rnguyen/segModule/main.cpp
 segmenter.hpp
 /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenter.hpp
+segmenterFactory.hpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.hpp
 iostream
 -
 
 /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenter.cpp
 segmenter.hpp
 /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenter.hpp
+featureExtractor.hpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.hpp
 stdexcept
 -
 
 /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenter.hpp
-fstream
--
 map
 -
 memory
@@ -392,5 +410,21 @@ opencv2/highgui.hpp
 opencv2/imgproc.hpp
 -
 yaml-cpp/yaml.h
+-
+featureExtractor.hpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.hpp
+
+/mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.cpp
+segmenterFactory.hpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.hpp
+segmenter.hpp
+/mnt/netapp/SECURITY/users/rnguyen/segModule/segmenter.hpp
+stdexcept
+-
+
+/mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.hpp
+memory
+-
+string
 -
 

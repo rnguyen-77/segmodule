@@ -6,21 +6,24 @@
 class SegmenterBase; //forward declaration of base segmenter class
 class ConfigLoader;  //forward declaration - full definition not needed in header
 
-//factory class for Threshold segmenter - owns creation logic for ThresholdSegmenter
-class ThresholdSegmenterFactory {
-public:
-    std::unique_ptr<SegmenterBase> create(const ConfigLoader& config) const;
-};
-
-//factory class for Canny segmenter - owns creation logic for CannySegmenter
-class CannySegmenterFactory {
-public:
-    std::unique_ptr<SegmenterBase> create(const ConfigLoader& config) const;
-};
-
-//dispatcher: reads style name from config and calls the corresponding segmenter factory
-//to add a new segmenter: add a new factory class above and one if-line in the dispatcher
+//abstract base factory class - derived factories override create() to build a specific segmenter
 class SegmenterFactory {
 public:
-    static std::unique_ptr<SegmenterBase> create(const std::string& styleName, const ConfigLoader& config);
+    virtual ~SegmenterFactory() = default;
+    virtual std::unique_ptr<SegmenterBase> create(const ConfigLoader& config) const = 0;
+
+    //static dispatcher: reads style name and delegates to the matching derived factory
+    static std::unique_ptr<SegmenterFactory> factoryStyle(const std::string& styleName);
+};
+
+//derived factory for Threshold segmenter - owns creation logic for ThresholdSegmenter
+class ThresholdSegmenterFactory : public SegmenterFactory {
+public:
+    std::unique_ptr<SegmenterBase> create(const ConfigLoader& config) const override;
+};
+
+//derived factory for Canny segmenter - owns creation logic for CannySegmenter
+class CannySegmenterFactory : public SegmenterFactory {
+public:
+    std::unique_ptr<SegmenterBase> create(const ConfigLoader& config) const override;
 };

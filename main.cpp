@@ -15,13 +15,14 @@ int main(int argc, char* argv[]) {
     try {
         ConfigLoader config(configPath); //construct and load config - throws on bad file or schema
 
-        //get active segmentation style from config 
+        //get active segmentation style from config
         const std::string styleName = config.getActiveStyle();
-        //create segmenter object based on selected style using factory method
-        const std::unique_ptr<SegmenterBase> segmenter = SegmenterFactory::create(styleName, config);
+        //two-step factory: first get the derived factory for the style, then create the segmenter
+        const std::unique_ptr<SegmenterFactory> factory = SegmenterFactory::factoryStyle(styleName);
+        const std::unique_ptr<SegmenterBase> segmenter = factory->create(config);
        
         ALOG alogImage = load(imagePath); //placeholder ALOG image - replace load logic once ALOG image class is defined
-        std::vector<ObjectFeatures> objects;
+        ObjectCollection objects;
         ALOG alogLabelImage; //placeholder ALOG image to hold segmentation output
 
         segmenter->segment(alogImage, alogLabelImage, objects); //segment image and extract features

@@ -6,8 +6,7 @@
 std::unique_ptr<SegmenterBase> ThresholdSegmenterFactory::create(const ConfigLoader& config) const {
     return std::make_unique<ThresholdSegmenter>(
         config.getParam("Threshold", "threshold"),
-        config.getParam("Threshold", "maxValue"),
-        config.getFeatureNames() //read once at construction - no config dependency during segment()
+        config.getParam("Threshold", "maxValue")
     );
 }
 
@@ -15,14 +14,14 @@ std::unique_ptr<SegmenterBase> ThresholdSegmenterFactory::create(const ConfigLoa
 std::unique_ptr<SegmenterBase> CannySegmenterFactory::create(const ConfigLoader& config) const {
     return std::make_unique<CannySegmenter>(
         config.getParam("Canny", "lowThreshold"),
-        config.getParam("Canny", "highThreshold"),
-        config.getFeatureNames() //read once at construction - no config dependency during segment()
+        config.getParam("Canny", "highThreshold")
     );
 }
 
-//dispatcher: reads style name and calls the corresponding segmenter factory instance
-std::unique_ptr<SegmenterBase> SegmenterFactory::create(const std::string& styleName, const ConfigLoader& config) {
-    if (styleName == "Threshold") return ThresholdSegmenterFactory().create(config);
-    if (styleName == "Canny")     return CannySegmenterFactory().create(config);
+//static selector: returns a derived factory object for the given style name
+//caller then invokes factory->create(config) to build the actual segmenter
+std::unique_ptr<SegmenterFactory> SegmenterFactory::factoryStyle(const std::string& styleName) {
+    if (styleName == "Threshold") return std::make_unique<ThresholdSegmenterFactory>();
+    if (styleName == "Canny")     return std::make_unique<CannySegmenterFactory>();
     throw std::invalid_argument("Unknown segmentation style: " + styleName);
 }

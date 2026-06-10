@@ -459,3 +459,35 @@ Parsed CXX implicit link information from above output:
   implicit fwks: []
 
 
+Determining if the include file pthread.h exists passed with the following output:
+Change Dir: /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/bin/make cmTC_3aba5/fast && make[1]: Entering directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+/bin/make -f CMakeFiles/cmTC_3aba5.dir/build.make CMakeFiles/cmTC_3aba5.dir/build
+make[2]: Entering directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_3aba5.dir/CheckIncludeFile.c.o
+/bin/cc    -o CMakeFiles/cmTC_3aba5.dir/CheckIncludeFile.c.o   -c /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp/CheckIncludeFile.c
+Linking C executable cmTC_3aba5
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3aba5.dir/link.txt --verbose=1
+/bin/cc      CMakeFiles/cmTC_3aba5.dir/CheckIncludeFile.c.o  -o cmTC_3aba5 
+make[2]: Leaving directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+
+
+
+Determining if the function pthread_create exists in the pthread passed with the following output:
+Change Dir: /mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/bin/make cmTC_f2ab4/fast && make[1]: Entering directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+/bin/make -f CMakeFiles/cmTC_f2ab4.dir/build.make CMakeFiles/cmTC_f2ab4.dir/build
+make[2]: Entering directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_f2ab4.dir/CheckFunctionExists.c.o
+/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_f2ab4.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-3.16/Modules/CheckFunctionExists.c
+Linking C executable cmTC_f2ab4
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f2ab4.dir/link.txt --verbose=1
+/bin/cc  -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_f2ab4.dir/CheckFunctionExists.c.o  -o cmTC_f2ab4  -lpthread 
+make[2]: Leaving directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+make[1]: Leaving directory '/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles/CMakeTmp'
+
+
+

@@ -57,18 +57,18 @@ include CMakeFiles/basicseg.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/basicseg.dir/flags.make
 
-CMakeFiles/basicseg.dir/basicseg.cpp.o: CMakeFiles/basicseg.dir/flags.make
-CMakeFiles/basicseg.dir/basicseg.cpp.o: ../basicseg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/basicseg.dir/basicseg.cpp.o"
-	/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/basicseg.dir/basicseg.cpp.o -c /mnt/netapp/SECURITY/users/rnguyen/segModule/basicseg.cpp
+CMakeFiles/basicseg.dir/main.cpp.o: CMakeFiles/basicseg.dir/flags.make
+CMakeFiles/basicseg.dir/main.cpp.o: ../main.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/basicseg.dir/main.cpp.o"
+	/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/basicseg.dir/main.cpp.o -c /mnt/netapp/SECURITY/users/rnguyen/segModule/main.cpp
 
-CMakeFiles/basicseg.dir/basicseg.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/basicseg.dir/basicseg.cpp.i"
-	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/netapp/SECURITY/users/rnguyen/segModule/basicseg.cpp > CMakeFiles/basicseg.dir/basicseg.cpp.i
+CMakeFiles/basicseg.dir/main.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/basicseg.dir/main.cpp.i"
+	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/netapp/SECURITY/users/rnguyen/segModule/main.cpp > CMakeFiles/basicseg.dir/main.cpp.i
 
-CMakeFiles/basicseg.dir/basicseg.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/basicseg.dir/basicseg.cpp.s"
-	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/netapp/SECURITY/users/rnguyen/segModule/basicseg.cpp -o CMakeFiles/basicseg.dir/basicseg.cpp.s
+CMakeFiles/basicseg.dir/main.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/basicseg.dir/main.cpp.s"
+	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/netapp/SECURITY/users/rnguyen/segModule/main.cpp -o CMakeFiles/basicseg.dir/main.cpp.s
 
 CMakeFiles/basicseg.dir/segmenter.cpp.o: CMakeFiles/basicseg.dir/flags.make
 CMakeFiles/basicseg.dir/segmenter.cpp.o: ../segmenter.cpp
@@ -83,16 +83,46 @@ CMakeFiles/basicseg.dir/segmenter.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/basicseg.dir/segmenter.cpp.s"
 	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenter.cpp -o CMakeFiles/basicseg.dir/segmenter.cpp.s
 
+CMakeFiles/basicseg.dir/segmenterFactory.cpp.o: CMakeFiles/basicseg.dir/flags.make
+CMakeFiles/basicseg.dir/segmenterFactory.cpp.o: ../segmenterFactory.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/basicseg.dir/segmenterFactory.cpp.o"
+	/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/basicseg.dir/segmenterFactory.cpp.o -c /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.cpp
+
+CMakeFiles/basicseg.dir/segmenterFactory.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/basicseg.dir/segmenterFactory.cpp.i"
+	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.cpp > CMakeFiles/basicseg.dir/segmenterFactory.cpp.i
+
+CMakeFiles/basicseg.dir/segmenterFactory.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/basicseg.dir/segmenterFactory.cpp.s"
+	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/netapp/SECURITY/users/rnguyen/segModule/segmenterFactory.cpp -o CMakeFiles/basicseg.dir/segmenterFactory.cpp.s
+
+CMakeFiles/basicseg.dir/featureExtractor.cpp.o: CMakeFiles/basicseg.dir/flags.make
+CMakeFiles/basicseg.dir/featureExtractor.cpp.o: ../featureExtractor.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/basicseg.dir/featureExtractor.cpp.o"
+	/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/basicseg.dir/featureExtractor.cpp.o -c /mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.cpp
+
+CMakeFiles/basicseg.dir/featureExtractor.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/basicseg.dir/featureExtractor.cpp.i"
+	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.cpp > CMakeFiles/basicseg.dir/featureExtractor.cpp.i
+
+CMakeFiles/basicseg.dir/featureExtractor.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/basicseg.dir/featureExtractor.cpp.s"
+	/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/netapp/SECURITY/users/rnguyen/segModule/featureExtractor.cpp -o CMakeFiles/basicseg.dir/featureExtractor.cpp.s
+
 # Object files for target basicseg
 basicseg_OBJECTS = \
-"CMakeFiles/basicseg.dir/basicseg.cpp.o" \
-"CMakeFiles/basicseg.dir/segmenter.cpp.o"
+"CMakeFiles/basicseg.dir/main.cpp.o" \
+"CMakeFiles/basicseg.dir/segmenter.cpp.o" \
+"CMakeFiles/basicseg.dir/segmenterFactory.cpp.o" \
+"CMakeFiles/basicseg.dir/featureExtractor.cpp.o"
 
 # External object files for target basicseg
 basicseg_EXTERNAL_OBJECTS =
 
-basicseg: CMakeFiles/basicseg.dir/basicseg.cpp.o
+basicseg: CMakeFiles/basicseg.dir/main.cpp.o
 basicseg: CMakeFiles/basicseg.dir/segmenter.cpp.o
+basicseg: CMakeFiles/basicseg.dir/segmenterFactory.cpp.o
+basicseg: CMakeFiles/basicseg.dir/featureExtractor.cpp.o
 basicseg: CMakeFiles/basicseg.dir/build.make
 basicseg: ../opencv-install/lib/libopencv_gapi.so.4.14.0
 basicseg: ../opencv-install/lib/libopencv_highgui.so.4.14.0
@@ -111,7 +141,7 @@ basicseg: ../opencv-install/lib/libopencv_flann.so.4.14.0
 basicseg: ../opencv-install/lib/libopencv_imgproc.so.4.14.0
 basicseg: ../opencv-install/lib/libopencv_core.so.4.14.0
 basicseg: CMakeFiles/basicseg.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable basicseg"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/netapp/SECURITY/users/rnguyen/segModule/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable basicseg"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/basicseg.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
