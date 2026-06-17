@@ -9,6 +9,8 @@
 #include <opencv2/imgproc.hpp>
 #include <yaml-cpp/yaml.h>
 
+#include "seg_image.hpp"  // SegImage image type (adapter standing in for the bagLoader image class)
+
 
 
 //class to load and store configuration parameters for segmenters
@@ -25,9 +27,9 @@ private:
 };
 
 //class wrapper for segmented objects found by connectedComponentsWithStats
-class Objects {
+class Object {
 public:
-    explicit Objects(int label) : label_(label) {}
+    explicit Object(int label) : label_(label) {}
     int label() const { return label_; }  //connected component label index (identifier, not a computed feature)
 
     void setFeature(const std::string& name, double value);  //store a computed feature by name
@@ -41,31 +43,31 @@ private:
     std::map<std::string, double> features_;  //named features populated during segmentation (e.g. "area", "centroid_x", "centroid_y")
 };
 
-//manages a collection of Objects found during segmentation
-class ObjectCollection {
+//manages a collection of Object instances found during segmentation
+class Objects {
 public:
-    void add(Objects obj);                    //add a single object to the collection
-    void clear();                             //remove all objects (e.g. before reprocessing)
-    const std::vector<Objects>& all() const;  //read-only access to all objects
+    void add(Object obj);                    //add a single object to the collection
+    void clear();                            //remove all objects (e.g. before reprocessing)
+    const std::vector<Object>& all() const;  //read-only access to all objects
     std::size_t size() const;
 private:
-    std::vector<Objects> objects_;
+    std::vector<Object> objects_;
 };
 
 //base class for image segmenters
 class SegmenterBase {
 public:
     virtual ~SegmenterBase() = default; //virtual destructor to ensure proper cleanup of derived class objects through base class pointers
-    virtual void segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const = 0; //pure virtual function to be implemented by derived classes
+    virtual void segment(const SegImage& alogInput, SegImage& labelImage, Objects& objects) const = 0; //pure virtual function to be implemented by derived classes
 };
 
 //derived class for common functions shared by multiple segmentation styles (e.g. grayscale conversion)
 class CommonSegmenter : public SegmenterBase {
 protected:
     cv::Mat toGray(const cv::Mat& input) const;
-    void findObjects(const cv::Mat& input, ALOG& labelImage, ObjectCollection& objects) const;
-    cv::Mat convertALOGtoMat(const ALOG& alog) const; //placeholder concept: converts ALOG images (from bagLoader module) to OpenCV Mat format for processing
-    ALOG convertMatToALOG(const cv::Mat& mat) const; //placeholder concept: converts processed OpenCV Mat back to ALOG format for output
+    void findObjects(const cv::Mat& input, SegImage& labelImage, Objects& objects) const;
+    cv::Mat convertSegImagetoMat(const SegImage& alog) const; //placeholder concept: converts SegImage images (from bagLoader module) to OpenCV Mat format for processing
+    SegImage convertMatToSegImage(const cv::Mat& mat) const; //placeholder concept: converts processed OpenCV Mat back to SegImage format for output
 };
 
 //derived class for thresholding segmentation
@@ -74,20 +76,20 @@ public:
     ThresholdSegmenter(double threshold, double maxValue)
         : threshold_(threshold), maxValue_(maxValue) {}
 
-    void segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const override;
+    void segment(const SegImage& alogInput, SegImage& labelImage, Objects& objects) const override;
 
 private:
     double threshold_;
     double maxValue_;
 };
 
-//derived class for Canny edge detection segmentation
+//derived class for canny edge detection segmentation
 class CannySegmenter : public CommonSegmenter {
 public:
     CannySegmenter(double lowThreshold, double highThreshold)
         : lowThreshold_(lowThreshold), highThreshold_(highThreshold) {}
 
-    void segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const override;
+    void segment(const SegImage& alogInput, SegImage& labelImage, Objects& objects) const override;
 
 private:
     double lowThreshold_;

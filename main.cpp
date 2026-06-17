@@ -18,15 +18,20 @@ int main(int argc, char* argv[]) {
         //get active segmentation style from config
         const std::string styleName = config.getActiveStyle();
         //two-step factory: first get the derived factory for the style, then create the segmenter
-        const std::unique_ptr<SegmenterFactory> factory = SegmenterFactory::factoryStyle(styleName);
+        const std::unique_ptr<SegmenterFactoryBase> factory = SegmenterFactoryBase::factoryStyle(styleName);
         const std::unique_ptr<SegmenterBase> segmenter = factory->create(config);
-       
-        ALOG alogImage = load(imagePath); //placeholder ALOG image - replace load logic once ALOG image class is defined
-        ObjectCollection objects;
-        ALOG alogLabelImage; //placeholder ALOG image to hold segmentation output
+
+        std::cout << "Loading bag: " << imagePath << " ...\n";
+        SegImage alogImage = load(imagePath); //loads a .mi.gz bag via the bagLoader module
+        std::cout << "Loaded slice: " << alogImage.mat().cols << " x " << alogImage.mat().rows
+                  << " (style: " << styleName << ")\n";
+
+        Objects objects;
+        SegImage alogLabelImage; //SegImage image to hold segmentation output
 
         segmenter->segment(alogImage, alogLabelImage, objects); //segment image and extract features
-    
+        std::cout << "Segmentation complete: " << objects.size() << " object(s) found.\n";
+
     } catch (const std::exception& ex) {
         std::cerr << "Segmentation error: " << ex.what() << '\n';
         return 1;

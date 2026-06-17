@@ -20,7 +20,7 @@ std::unique_ptr<SegmenterBase> CannySegmenterFactory::create(const ConfigLoader&
 
 //static selector: returns a derived factory object for the given style name
 //caller then invokes factory->create(config) to build the actual segmenter
-std::unique_ptr<SegmenterFactory> SegmenterFactory::factoryStyle(const std::string& styleName) {
+std::unique_ptr<SegmenterFactoryBase> SegmenterFactoryBase::factoryStyle(const std::string& styleName) {
     if (styleName == "Threshold") return std::make_unique<ThresholdSegmenterFactory>();
     if (styleName == "Canny")     return std::make_unique<CannySegmenterFactory>();
     throw std::invalid_argument("Unknown segmentation style: " + styleName);

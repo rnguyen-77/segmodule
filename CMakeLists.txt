@@ -10,9 +10,23 @@ set(OpenCV_DIR "/mnt/netapp/SECURITY/users/rnguyen/segModule/opencv-install/lib/
 find_package(OpenCV REQUIRED)
 find_package(yaml-cpp REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
+# boost (multi_array is header-only in /usr/include; iostreams gzip needs the lib).
+# Linked by name to avoid a broken FindBoost imported target on this box.
 
-add_executable(basicseg main.cpp segmenter.cpp segmenterFactory.cpp)
-target_link_libraries(basicseg PRIVATE ${OpenCV_LIBS} yaml-cpp)
+# Path to the coworker's bagLoader module (bag.h / bag.cpp / file_io.h)
+set(BAGLOADER_DIR "/mnt/netapp/SECURITY/users/ltang/public/TestGoogleTest")
+
+# basicseg: the real program. Loads a .mi.gz bag via the bagLoader, then segments.
+add_executable(basicseg
+    main.cpp
+    segmenter.cpp
+    segmenterFactory.cpp
+    seg_image.cpp
+    bag_adapter.cpp
+    ${BAGLOADER_DIR}/bag.cpp        # coworker's ALOG::Bag loader implementation
+)
+target_include_directories(basicseg PRIVATE ${BAGLOADER_DIR})
+target_link_libraries(basicseg PRIVATE ${OpenCV_LIBS} yaml-cpp boost_iostreams z)
 
 message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
 message(STATUS "Include Directory: ${OpenCV_INCLUDE_DIRS}")
@@ -32,4 +46,15 @@ target_link_libraries(segmenter_test PRIVATE
     GTest::GTest
     GTest::Main
 )
+
+# Copy the test config fixture next to the test binary after every build, so the
+# tests resolve it relative to the executable (see configPath() in segmenter_test.cpp)
+# and pass no matter which directory the executable is launched from.
+add_custom_command(TARGET segmenter_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/tests/test_config.yaml
+        $<TARGET_FILE_DIR:segmenter_test>/test_config.yaml
+    COMMENT "Staging test_config.yaml next to segmenter_test"
+)
+
 add_test(NAME segmenter_test COMMAND segmenter_test)

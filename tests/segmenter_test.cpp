@@ -1,17 +1,32 @@
 #include <gtest/gtest.h>
+#include <filesystem>
+#include <iostream>
+#include <string>
+#include <vector>
 #include "../segmenter.hpp"
 #include "../segmenterFactory.hpp"
+
+// Resolves the test config fixture relative to the test executable itself, not the
+// current working directory. CMake stages test_config.yaml next to the binary on
+// each build (see the POST_BUILD step in CMakeLists.txt), so the tests pass no
+// matter which directory segmenter_test is launched from. /proc/self/exe is the
+// kernel's symlink to the running binary on Linux.
+static std::string configPath() {
+    namespace fs = std::filesystem;
+    const fs::path exeDir = fs::read_symlink("/proc/self/exe").parent_path();
+    return (exeDir / "test_config.yaml").string();
+}
 
 // ── ConfigLoader ─────────────────────────────────────────────────────────────
 
 class ConfigLoaderTest : public ::testing::Test {
 protected:
-    std::string validPath   = "tests/test_config.yaml";
+    std::string validPath   = configPath();
     std::string invalidPath = "nonexistent.yaml";
 };
 
 TEST_F(ConfigLoaderTest, ThrowsOnMissingFile) {
-    EXPECT_THROW(ConfigLoader(invalidPath), std::exception);
+    EXPECT_THROW({ ConfigLoader cfg(invalidPath); }, std::exception);
 }
 
 TEST_F(ConfigLoaderTest, LoadsActiveStyle) {
@@ -46,31 +61,31 @@ TEST_F(ConfigLoaderTest, GetParamThrowsOnUnknownStyle) {
     EXPECT_THROW(config.getParam(config.getActiveStyle(), badParam), std::runtime_error);
 }
 
-// ── Objects ───────────────────────────────────────────────────────────────────
+// ── Object ───────────────────────────────────────────────────────────────────
 
-class ObjectsTest : public ::testing::Test {
+class ObjectTest : public ::testing::Test {
 protected:
-    Objects obj{1};
+    Object obj{1};
 };
 
-TEST_F(ObjectsTest, SetAndGetRoundTrip) {
+TEST_F(ObjectTest, SetAndGetRoundTrip) {
     // hint: EXPECT_DOUBLE_EQ after std::get<double>
     obj.setFeature("area", 44.0);
     EXPECT_DOUBLE_EQ(obj.getFeature("area"), 44.0);
 }
 
-TEST_F(ObjectsTest, HasReturnsTrueAfterSet) {
+TEST_F(ObjectTest, HasReturnsTrueAfterSet) {
     // hint: EXPECT_TRUE
     obj.setFeature("area", 44.0);
     EXPECT_TRUE(obj.hasFeature("area"));
 }
 
-TEST_F(ObjectsTest, HasReturnsFalseForMissingFeature) {
+TEST_F(ObjectTest, HasReturnsFalseForMissingFeature) {
     // hint: EXPECT_FALSE
     EXPECT_FALSE(obj.hasFeature("area"));
 }
 
-TEST_F(ObjectsTest, GetThrowsOnMissingFeature) {
+TEST_F(ObjectTest, GetThrowsOnMissingFeature) {
     // hint: EXPECT_THROW with std::out_of_range
     EXPECT_THROW(obj.getFeature("area"), std::out_of_range);
 }
@@ -84,9 +99,9 @@ protected:
     }
 
     std::unique_ptr<ThresholdSegmenter> segmenter;
-    ALOG alogImage;
-    ALOG alogLabelImage;
-    ObjectCollection objects;
+    SegImage alogImage;
+    SegImage alogLabelImage;
+    Objects objects;
 };
 
 TEST_F(ThresholdSegmenterTest, SegmentProducesOutputObjects) {
@@ -111,9 +126,9 @@ protected:
     }
 
     std::unique_ptr<CannySegmenter> segmenter;
-    ALOG alogImage;
-    ALOG alogLabelImage;
-    ObjectCollection objects;
+    SegImage alogImage;
+    SegImage alogLabelImage;
+    Objects objects;
 };
 
 TEST_F(CannySegmenterTest, SegmentProducesOutputObjects) {
@@ -143,29 +158,29 @@ protected:
         expectedLabelMat = cv::Mat::zeros(100, 100, CV_32S);
         cv::rectangle(expectedLabelMat, cv::Rect(10, 10, 30, 30), cv::Scalar(1), cv::FILLED);
 
-        //ALOG alogInput = ALOG(syntheticInput); // wrap synthetic input in ALOG when class is ready
+        //SegImage alogInput = SegImage(syntheticInput); // wrap synthetic input in SegImage when class is ready
         segmenter = std::make_unique<ThresholdSegmenter>(160, 255);
     }
 
     cv::Mat syntheticInput;         // synthetic grayscale input image (fed into the segmenter)
     cv::Mat expectedLabelMat;       // hand-built expected label image (compared against output)
-    ALOG alogInput;
-    ALOG alogLabelImage;
-    ObjectCollection objects;
+    SegImage alogInput;
+    SegImage alogLabelImage;
+    Objects objects;
     std::unique_ptr<ThresholdSegmenter> segmenter;
 };
 
 TEST_F(LabelImageTest, LabelImageIsNotEmpty) {
-    // hint: EXPECT_FALSE on labelImage being empty — check cv::Mat via convertALOGtoMat when ready
+    // hint: EXPECT_FALSE on labelImage being empty — check cv::Mat via convertSegImagetoMat when ready
     segmenter->segment(alogInput, alogLabelImage, objects);
     EXPECT_FALSE(alogLabelImage.empty());
 }
 
 TEST_F(LabelImageTest, LabelImageMatchesExpected) {
     //compare the segmenter's label image against the hand-built expected label image
-    alogInput = ALOG(syntheticInput); //placeholder
+    alogInput = SegImage(syntheticInput); //placeholder
     segmenter->segment(alogInput, alogLabelImage, objects);
-    cv::Mat actualLabelMat;  // = convertALOGtoMat(alogLabelImage);  ← wire up once ALOG exposes its cv::Mat
+    cv::Mat actualLabelMat;  // convert the alog output to OpenCV mat for comparison 
     EXPECT_EQ(cv::norm(expectedLabelMat, actualLabelMat, cv::NORM_INF), 0);
 }
 
@@ -174,7 +189,7 @@ TEST_F(LabelImageTest, LabelImageMatchesExpected) {
 class SegmenterFactoryTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        config = std::make_unique<ConfigLoader>("tests/test_config.yaml");
+        config = std::make_unique<ConfigLoader>(configPath());
     }
 
     std::unique_ptr<ConfigLoader> config;
@@ -182,26 +197,104 @@ protected:
 
 TEST_F(SegmenterFactoryTest, CreatesThresholdSegmenter) {
     // hint: EXPECT_NE against nullptr
-    auto factory = SegmenterFactory::factoryStyle("Threshold");
+    auto factory = SegmenterFactoryBase::factoryStyle("Threshold");
     auto seg = factory->create(*config);
     EXPECT_NE(seg, nullptr);
 }
 
 TEST_F(SegmenterFactoryTest, CreatesCannySegmenter) {
     // hint: EXPECT_NE against nullptr
-    auto factory = SegmenterFactory::factoryStyle("Canny");
+    auto factory = SegmenterFactoryBase::factoryStyle("Canny");
     auto seg = factory->create(*config);
     EXPECT_NE(seg, nullptr);
 }
 
 TEST_F(SegmenterFactoryTest, ThrowsOnUnknownStyle) {
     // hint: EXPECT_THROW with std::invalid_argument
-    EXPECT_THROW(SegmenterFactory::factoryStyle("Unknown"), std::invalid_argument);
+    EXPECT_THROW(SegmenterFactoryBase::factoryStyle("Unknown"), std::invalid_argument);
 }
+
+// ── Custom event listener: per-test pass/fail visibility ─────────────────────
+// Hooks GoogleTest's per-test events so the output shows each individual test's
+// result (and, on failure, the assertion location + message) instead of only a
+// final aggregate count. Same mechanism as the listener in the addition apptest.
+namespace {
+    const std::string GREEN = "\033[32m";
+    const std::string RED   = "\033[31m";
+    const std::string CYAN  = "\033[36m";
+    const std::string DIM   = "\033[2m";
+    const std::string RESET = "\033[0m";
+}
+
+class SegmenterTestListener : public ::testing::EmptyTestEventListener {
+public:
+    // Called right before a test body runs
+    void OnTestStart(const ::testing::TestInfo& info) override {
+        std::cout << CYAN << "▶ RUN   " << RESET
+                  << info.test_suite_name() << "." << info.name() << std::endl;
+    }
+
+    // Called after a test body finishes — print PASS/FAIL for that specific test
+    void OnTestEnd(const ::testing::TestInfo& info) override {
+        const ::testing::TestResult* result = info.result();
+        const std::string fullName =
+            std::string(info.test_suite_name()) + "." + info.name();
+
+        if (result->Passed()) {
+            std::cout << GREEN << "  PASS  " << RESET << fullName
+                      << DIM << " (" << result->elapsed_time() << " ms)" << RESET << "\n";
+            ++passedCount_;
+        } else {
+            std::cout << RED << "  FAIL  " << RESET << fullName
+                      << DIM << " (" << result->elapsed_time() << " ms)" << RESET << "\n";
+            // show each failed assertion's file:line and message
+            for (int i = 0; i < result->total_part_count(); ++i) {
+                const ::testing::TestPartResult& part = result->GetTestPartResult(i);
+                if (part.failed()) {
+                    // file_name() is null for failures from uncaught exceptions
+                    // (no source location); guard it before streaming.
+                    const char* file = part.file_name();
+                    const char* msg  = part.summary();
+                    std::cout << RED << "        @ "
+                              << (file ? file : "<uncaught exception>");
+                    if (file) std::cout << ":" << part.line_number();
+                    std::cout << RESET << "\n"
+                              << DIM << "        " << (msg ? msg : "") << RESET << "\n";
+                }
+            }
+            failedNames_.push_back(fullName);
+        }
+        std::cout << std::flush;
+    }
+
+    // Called once after the whole suite finishes — clean per-test summary
+    void OnTestProgramEnd(const ::testing::UnitTest& /*unit*/) override {
+        std::cout << "\n" << CYAN << "════════ Summary ════════" << RESET << "\n"
+                  << GREEN << passedCount_ << " passed" << RESET << ", "
+                  << (failedNames_.empty() ? GREEN : RED) << failedNames_.size()
+                  << " failed" << RESET << "\n";
+        for (const std::string& name : failedNames_) {
+            std::cout << RED << "  ✗ " << name << RESET << "\n";
+        }
+        std::cout << std::flush;
+    }
+
+private:
+    int passedCount_ = 0;
+    std::vector<std::string> failedNames_;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
+
+    ::testing::TestEventListeners& listeners =
+        ::testing::UnitTest::GetInstance()->listeners();
+    // Remove GoogleTest's default printer so output isn't duplicated, then install
+    // our per-test listener. (To keep the default output too, skip this Release line.)
+    delete listeners.Release(listeners.default_result_printer());
+    listeners.Append(new SegmenterTestListener);
+
     return RUN_ALL_TESTS();
 }

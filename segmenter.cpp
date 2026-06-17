@@ -53,18 +53,18 @@ double ConfigLoader::getParam(const std::string& styleName, const std::string& p
     if (!config_.contains(styleName)) {
         throw std::runtime_error("Segmentation style not found in config: " + styleName);
     }
-    if (!config_[styleName].contains(paramName)) {
+    if (!config_.at(styleName).contains(paramName)) {
         throw std::runtime_error("Parameter not found in config for style " + styleName + ": " + paramName);
     }
-    return config_[styleName][paramName];
+    return config_.at(styleName).at(paramName);
 }
 
-//Objects feature map method implementations
-void Objects::setFeature(const std::string& name, double value) {
+//Object feature map method implementations
+void Object::setFeature(const std::string& name, double value) {
     features_[name] = value;
 }
 
-double Objects::getFeature(const std::string& name) const {
+double Object::getFeature(const std::string& name) const {
     auto it = features_.find(name);
     if (it == features_.end()) {
         throw std::out_of_range("Feature not found: " + name);
@@ -72,36 +72,41 @@ double Objects::getFeature(const std::string& name) const {
     return it->second;
 }
 
-bool Objects::hasFeature(const std::string& name) const {
+bool Object::hasFeature(const std::string& name) const {
     return features_.contains(name);
 }
 
-//ObjectCollection method implementations
-void ObjectCollection::add(Objects obj) {
+//Objects collection method implementations
+void Objects::add(Object obj) {
     objects_.push_back(std::move(obj));
 }
 
-void ObjectCollection::clear() {
+void Objects::clear() {
     objects_.clear();
 }
 
-const std::vector<Objects>& ObjectCollection::all() const {
+const std::vector<Object>& Objects::all() const {
     return objects_;
 }
 
-std::size_t ObjectCollection::size() const {
+std::size_t Objects::size() const {
     return objects_.size();
 }
 
-//ALOG image class adapter
-cv::Mat CommonSegmenter::convertALOGtoMat(const ALOG& alog) const {
-    //placeholder implementation 
-    return cv::Mat();
+//SegImage image class adapter
+cv::Mat CommonSegmenter::convertSegImagetoMat(const SegImage& alog) const {
+    //adapter SegImage is cv::Mat-backed, so this hands back the underlying image.
+    //guard the empty case: passing an empty image into OpenCV (threshold/Canny)
+    //is undefined and crashes, so surface it as a catchable error instead.
+    if (alog.empty()) {
+        throw std::runtime_error("convertSegImagetoMat: SegImage image is empty (no input wired in)");
+    }
+    return alog.mat();
 }
 
-ALOG CommonSegmenter::convertMatToALOG(const cv::Mat& mat) const {
-    //placeholder implementation 
-    return ALOG();
+SegImage CommonSegmenter::convertMatToSegImage(const cv::Mat& mat) const {
+    //wrap the processed cv::Mat back into an SegImage
+    return SegImage(mat);
 }
 
 //helper function for common preprocessing step to convert input image to grayscale if needed
@@ -115,8 +120,8 @@ cv::Mat CommonSegmenter::toGray(const cv::Mat& input) const {
 }
 
 //implementation of thresholding segmentation using OpenCV's threshold function
-void ThresholdSegmenter::segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const {
-    cv::Mat cvMat = convertALOGtoMat(alogInput);
+void ThresholdSegmenter::segment(const SegImage& alogInput, SegImage& labelImage, Objects& objects) const {
+    cv::Mat cvMat = convertSegImagetoMat(alogInput);
 
     cv::Mat gray = toGray(cvMat);
     cv::Mat mask;
@@ -126,8 +131,8 @@ void ThresholdSegmenter::segment(const ALOG& alogInput, ALOG& labelImage, Object
 }
 
 //implementation of Canny edge detection segmentation using OpenCV's Canny function
-void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, ObjectCollection& objects) const {
-    cv::Mat cvMat = convertALOGtoMat(alogInput);
+void CannySegmenter::segment(const SegImage& alogInput, SegImage& labelImage, Objects& objects) const {
+    cv::Mat cvMat = convertSegImagetoMat(alogInput);
 
     cv::Mat gray = toGray(cvMat);
     cv::Mat blurred;
@@ -139,15 +144,15 @@ void CannySegmenter::segment(const ALOG& alogInput, ALOG& labelImage, ObjectColl
 }
 
 //runs connected component analysis on the binary mask to identify distinct objects and produce the labeled image
-void CommonSegmenter::findObjects(const cv::Mat& mask, ALOG& labelImage, ObjectCollection& objects) const {
+void CommonSegmenter::findObjects(const cv::Mat& mask, SegImage& labelImage, Objects& objects) const {
     cv::Mat labelMat, stats, centroids;
     int numComponents = cv::connectedComponentsWithStats(mask, labelMat, stats, centroids);
 
-    labelImage = convertMatToALOG(labelMat); //placeholder until ALOG class is ready
+    labelImage = convertMatToSegImage(labelMat); //placeholder until SegImage class is ready
 
     //label 0 is the background component - skip it and start from 1
     for (int i = 1; i < numComponents; ++i) {
-        Objects obj(i);
+        Object obj(i);
         obj.setFeature("Area",       static_cast<double>(stats.at<int>(i, cv::CC_STAT_AREA)));
         obj.setFeature("Centroid_x", centroids.at<double>(i, 0));
         obj.setFeature("Centroid_y", centroids.at<double>(i, 1));
