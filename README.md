@@ -155,11 +155,16 @@ The executable accepts the standard GTest flags:
 
 ### What passing looks like
 
-The suite reports **11 passed, 6 failed** from any directory, and that count is
-expected. The 6 failures feed unwired synthetic inputs into `segment()` (see the
-inline notes in `tests/segmenter_test.cpp`). Each one fails an assertion; none of them
-crash. They mark work deferred at this concept stage. A different count, or a crash,
-means something changed, so check that you rebuilt before running.
+The suite reports **13 passed, 4 failed** from any directory, and that count is
+expected. The 4 failures are the `ThresholdSegmenterTest` and `CannySegmenterTest`
+`segment()` tests, whose fixtures still hand `segment()` an empty, unwired `SegImage`;
+`convertSegImagetoMat` then throws "SegImage image is empty (no input wired in)". The
+`LabelImageTest` fixture, by contrast, now wires a real synthetic image into `SegImage`
+and passes (see the inline notes in `tests/segmenter_test.cpp`). The 4 are honest
+assertion/exception failures, not crashes — they mark work deferred at this concept
+stage (wire a synthetic input into the segmenter fixtures the way `LabelImageTest`
+does). A different count, or a crash, means something changed, so check that you
+rebuilt before running.
 
 ---
 

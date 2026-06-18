@@ -158,7 +158,7 @@ protected:
         expectedLabelMat = cv::Mat::zeros(100, 100, CV_32S);
         cv::rectangle(expectedLabelMat, cv::Rect(10, 10, 30, 30), cv::Scalar(1), cv::FILLED);
 
-        //SegImage alogInput = SegImage(syntheticInput); // wrap synthetic input in SegImage when class is ready
+        alogInput = SegImage(syntheticInput); // wrap synthetic input in SegImage for the segmenter
         segmenter = std::make_unique<ThresholdSegmenter>(160, 255);
     }
 
@@ -178,9 +178,8 @@ TEST_F(LabelImageTest, LabelImageIsNotEmpty) {
 
 TEST_F(LabelImageTest, LabelImageMatchesExpected) {
     //compare the segmenter's label image against the hand-built expected label image
-    alogInput = SegImage(syntheticInput); //placeholder
     segmenter->segment(alogInput, alogLabelImage, objects);
-    cv::Mat actualLabelMat;  // convert the alog output to OpenCV mat for comparison 
+    cv::Mat actualLabelMat = alogLabelImage.mat();  // convert the alog output to OpenCV mat for comparison 
     EXPECT_EQ(cv::norm(expectedLabelMat, actualLabelMat, cv::NORM_INF), 0);
 }
 

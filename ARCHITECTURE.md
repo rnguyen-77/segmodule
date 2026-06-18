@@ -183,7 +183,9 @@ The result: `segmenter_test` passes identically whether launched from the repo r
 from `build/`, or from anywhere else — and so does `ctest`, which runs from the build
 dir. Edit the fixture and rebuild; the copy refreshes automatically.
 
-Current test status: **11 passed / 6 failed** (same from any directory). The 6
-failures are expected — those tests feed unwired/synthetic-but-unassigned inputs
-into `segment()` (see the inline notes in `tests/segmenter_test.cpp`); they are
-honest failures, not crashes.
+Current test status: **13 passed / 4 failed** (same from any directory). The 4
+failures are expected — the `ThresholdSegmenterTest`/`CannySegmenterTest` `segment()`
+tests still feed an empty, unwired `SegImage` into `segment()`, so
+`convertSegImagetoMat` throws "SegImage image is empty". `LabelImageTest` now wires a
+real synthetic image into `SegImage` and passes (see the inline notes in
+`tests/segmenter_test.cpp`); they are honest failures, not crashes.
