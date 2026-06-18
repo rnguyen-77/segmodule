@@ -86,6 +86,36 @@ ConfigLoader,  Object / Objects
 SegImage   ← a data type passed THROUGH segment(); not part of the hierarchy
 ```
 
+## What's fixed vs. what varies per segmenter
+
+The structure around the segmenters is fixed. The inside of each segmenter varies.
+
+**Fixed, every segmenter shares it:**
+- The `segment()` contract: a `SegImage` in, a label `SegImage` plus an `Objects`
+  collection out. Same signature for every style.
+- The factory path: `SegmenterFactoryBase::factoryStyle(name)` returns the derived
+  factory, which builds the segmenter from `ConfigLoader`.
+- The output model: results come back as `Objects`, each carrying named features. A
+  caller reads any segmenter's output the same way.
+
+**Varies, per style:**
+- The body of `segment()`. The current `ThresholdSegmenter` and `CannySegmenter` call
+  OpenCV directly (`cv::threshold`, `cv::Canny`, `cv::connectedComponentsWithStats`),
+  so much of the per-style logic is OpenCV today. A different technique (watershed,
+  contour-based, a learned model) can look nothing like these inside. The structure
+  constrains the input and output types, not the method.
+
+**Adding a style:** subclass `CommonSegmenter`, implement `segment()`, add a factory,
+and register the style name in `factoryStyle()`. The config and the calling code need
+no change beyond the YAML style name.
+
+**Universal output, not-yet-universal input.** Output is universal today: every
+segmenter returns `Objects` plus a label image. Input is not universal yet.
+`segment()` takes `SegImage`, a `cv::Mat` wrapper standing in for `ALOG::ALOG_Image`.
+Until `ALOG_Image` exists, the input type is OpenCV-specific. When it lands, it
+becomes the shared input type and `bag_adapter` is the single swap point (see the
+image-type section above).
+
 ## Open decisions (flag in review)
 
 - **3-D → 2-D:** the adapter takes the middle z-slice and normalizes 16-bit → 8-bit.
