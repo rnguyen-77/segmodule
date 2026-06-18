@@ -72,18 +72,26 @@ lands. `ARCHITECTURE.md` has the full picture.
 
 ## Build
 
-You need OpenCV, yaml-cpp, GTest, and boost (iostreams). `CMakeLists.txt` resolves all
-four on this box.
+You need OpenCV, yaml-cpp, GTest, and boost (iostreams). OpenCV ships in the source
+tree under `opencv-install/`; `CMakeLists.txt` points at it by default. Override with
+`-DOpenCV_DIR=<path>` if yours is elsewhere.
 
-First clean build:
+First clean build, run from the repo root:
 
 ```bash
-cd /mnt/netapp/SECURITY/users/rnguyen/segModule/build
-cmake ..
-make
+cmake -S . -B build
+cmake --build build
 ```
 
-After the first build, use the rebuild loop below instead of a full `make`.
+That builds the `segmenter_test` target. The `basicseg` program also needs the
+bagLoader module (not in this repo), so pass its path when you want the program:
+
+```bash
+cmake -S . -B build -DBAGLOADER_DIR=<path-to-bagloader>
+cmake --build build
+```
+
+After the first build, use the rebuild loop below instead of a full rebuild.
 
 ---
 
@@ -99,17 +107,17 @@ binary. Run the old executable without rebuilding and you test old code. This tr
 people up more than anything else.
 
 `cmake --build` takes the build folder as an argument, so it runs from any directory
-without a `cd` first:
+without a `cd` first. From the repo root:
 
 ```bash
-cmake --build /mnt/netapp/SECURITY/users/rnguyen/segModule/build --target segmenter_test
+cmake --build build --target segmenter_test
 ```
 
 That recompiles what changed, relinks the executable, and copies the test config next
-to it. Then run the binary from wherever you are:
+to it. Then run the binary:
 
 ```bash
-/mnt/netapp/SECURITY/users/rnguyen/segModule/build/segmenter_test
+./build/segmenter_test
 ```
 
 It runs from anywhere because the tests find their config fixture next to the
@@ -119,11 +127,12 @@ there on every build. `build/`, the repo root, and `/tmp` all give the same resu
 
 ### One alias for the whole loop
 
-Add this to your `~/.bashrc` so you skip typing the path. It rebuilds, then runs:
+Point `SEG` at your checkout, then add an alias that rebuilds and runs in one step.
+Both lines go in your `~/.bashrc`, with `SEG` set to wherever you cloned the repo:
 
 ```bash
-alias segtest='cmake --build /mnt/netapp/SECURITY/users/rnguyen/segModule/build --target segmenter_test \
-  && /mnt/netapp/SECURITY/users/rnguyen/segModule/build/segmenter_test'
+export SEG="$HOME/segModule"   # your checkout path
+alias segtest='cmake --build "$SEG/build" --target segmenter_test && "$SEG/build/segmenter_test"'
 ```
 
 Then, from any directory after a change:
@@ -156,12 +165,11 @@ means something changed, so check that you rebuilt before running.
 
 ## Running the program
 
-`basicseg` takes a YAML config and a bag file:
+`basicseg` takes a YAML config and a bag file. Build it with `-DBAGLOADER_DIR=<path>`
+first (see Build above), then run from the repo root:
 
 ```bash
-cd /mnt/netapp/SECURITY/users/rnguyen/segModule
-./build/basicseg tests/test_config.yaml \
-    /mnt/netapp/SECURITY/users/ltang/public/TestGoogleTest/sample.mi.gz
+./build/basicseg tests/test_config.yaml <path-to-bag>.mi.gz
 ```
 
 The config picks the segmentation style (`Threshold` or `Canny`) and its parameters.

@@ -127,11 +127,13 @@ image-type section above).
 ## Build & run
 
 ```bash
-cd segModule/build && cmake .. && make
+# From the repo root. basicseg needs the bagLoader module (not in this repo),
+# so pass its path; the test target builds without it.
+cmake -S . -B build -DBAGLOADER_DIR=<path-to-bagloader>
+cmake --build build
 
-# Program: segment a real bag via the coworker's loader
-cd .. && ./build/basicseg tests/test_config.yaml \
-    /mnt/netapp/SECURITY/users/ltang/public/TestGoogleTest/sample.mi.gz
+# Program: segment a real bag via the bagLoader
+./build/basicseg tests/test_config.yaml <path-to-bag>.mi.gz
 
 # Unit tests: synthetic inputs, per-test pass/fail reporting
 #   runs from any directory — see the working-directory note below

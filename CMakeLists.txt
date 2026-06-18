@@ -5,7 +5,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(BasicImageSegmenter)
 
-set(OpenCV_DIR "/mnt/netapp/SECURITY/users/rnguyen/segModule/opencv-install/lib/cmake/opencv4")
+# Bundled OpenCV install lives inside the source tree. Override at configure time
+# with -DOpenCV_DIR=<path> if yours is elsewhere.
+set(OpenCV_DIR "${CMAKE_SOURCE_DIR}/opencv-install/lib/cmake/opencv4"
+    CACHE PATH "Directory containing OpenCVConfig.cmake")
 
 find_package(OpenCV REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -13,22 +16,30 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${YAML_CPP_INCLUDE_DIRS})
 # boost (multi_array is header-only in /usr/include; iostreams gzip needs the lib).
 # Linked by name to avoid a broken FindBoost imported target on this box.
 
-# Path to the coworker's bagLoader module (bag.h / bag.cpp / file_io.h)
-set(BAGLOADER_DIR "/mnt/netapp/SECURITY/users/ltang/public/TestGoogleTest")
+# Path to the bagLoader module (bag.h / bag.cpp / file_io.h). Not in this repo;
+# set it at configure time with -DBAGLOADER_DIR=<path> or the BAGLOADER_DIR env var.
+# basicseg builds only when it is provided; the test target does not need it.
+set(BAGLOADER_DIR "$ENV{BAGLOADER_DIR}"
+    CACHE PATH "Path to the bagLoader module providing bag.cpp / bag.h / file_io.h")
 
-# basicseg: the real program. Loads a .mi.gz bag via the bagLoader, then segments.
-add_executable(basicseg
-    main.cpp
-    segmenter.cpp
-    segmenterFactory.cpp
-    seg_image.cpp
-    bag_adapter.cpp
-    ${BAGLOADER_DIR}/bag.cpp        # coworker's ALOG::Bag loader implementation
-)
-target_include_directories(basicseg PRIVATE ${BAGLOADER_DIR})
-target_link_libraries(basicseg PRIVATE ${OpenCV_LIBS} yaml-cpp boost_iostreams z)
+if(BAGLOADER_DIR)
+    # basicseg: the real program. Loads a .mi.gz bag via the bagLoader, then segments.
+    add_executable(basicseg
+        main.cpp
+        segmenter.cpp
+        segmenterFactory.cpp
+        seg_image.cpp
+        bag_adapter.cpp
+        ${BAGLOADER_DIR}/bag.cpp        # bagLoader's ALOG::Bag loader implementation
+    )
+    target_include_directories(basicseg PRIVATE ${BAGLOADER_DIR})
+    target_link_libraries(basicseg PRIVATE ${OpenCV_LIBS} yaml-cpp boost_iostreams z)
+else()
+    message(WARNING
+        "BAGLOADER_DIR not set; skipping the basicseg program. "
+        "Pass -DBAGLOADER_DIR=<path> to build it. The segmenter_test target still builds.")
+endif()
 
-message(STATUS "OpenCV_DIR: ${OpenCV_DIR}")
 message(STATUS "Include Directory: ${OpenCV_INCLUDE_DIRS}")
 
 enable_testing()
