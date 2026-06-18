@@ -124,6 +124,33 @@ image-type section above).
   whether it becomes the shared image type across both modules (would require the
   bagLoader to take on an image representation the segmenter can consume).
 
+- **Where load ends and consume begins.** `loadBagSliceAsMat` (`bag_adapter.cpp`)
+  currently fuses two responsibilities. The loader's half (open the `.mi.gz`, parse
+  it into image data) belongs to the bagLoader. The consumer's half (pick the middle
+  z-slice, normalize 16-bit → 8-bit, hand back a `cv::Mat`) is a decision about how an
+  OpenCV segmenter wants to eat the image, not a property of the source, and it runs
+  at load time before any segmenter has said what it needs. The 8-bit normalize is
+  lossy: a future segmenter that wants the raw 16-bit data or the full volume cannot
+  recover it. When `ALOG_Image` becomes a real container, the split should be: the
+  bagLoader returns a faithful `ALOG_Image`, and the `ALOG_Image → cv::Mat` step
+  (with the normalize) moves onto the segmenter side, into `CommonSegmenter`'s
+  `convertSegImagetoMat` hook, so each segmenter converts from the same faithful
+  source however it needs. The slice choice is a pipeline decision and could stay a
+  parameter on the adapter rather than living inside each segmenter.
+
+- **Whether `bag_adapter` survives `ALOG_Image`.** The adapter exists to bridge two
+  incompatible types: the loader's `boost::multi_array<unsigned short, 3>` and the
+  segmenter's `cv::Mat`. Make `ALOG_Image` the type both sides speak and that bridge
+  has nothing left to translate; the conversion moves to the segmenter (above). A
+  second, separate job is hiding in the adapter: `bag_adapter.cpp` is the only
+  translation unit that includes the coworker's boost-heavy `bag.h`, which keeps the
+  segmenter, the tests, and `main.cpp` free of boost. That firewall survives only if
+  the bagLoader's public header still leaks boost after `ALOG_Image` lands. If the
+  loader exposes a clean API (`load(path) -> ALOG_Image` with no boost in its public
+  interface), `bag_adapter` has no remaining job and can be removed; the segmentation
+  module includes the loader's header and calls it directly. So the deciding factor is
+  the cleanliness of the bagLoader's API, not the conversion logic.
+
 ## Build & run
 
 ```bash
